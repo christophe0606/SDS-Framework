@@ -101,6 +101,28 @@ class SDSSource(GenericSource):
     def typeName(self):
         return ("SDSSource")
 
+class SDSAsyncSource(GenericSource):
+    def __init__(self,name,nb_samples,
+        sds_yml_file=None,
+        cmsis_rtos_event=None,
+        cmsis_rtos_cancel_event=None,
+        timeout="osWaitForever",
+        sds_id = None):
+        GenericSource.__init__(self,name)
+        self.sample_size = getSensorSampleSize(sds_yml_file)
+        self.addOutput("o",CType(SINT8),self.sample_size*nb_samples)
+        
+        if isinstance(cmsis_rtos_cancel_event, int):
+           self.addLiteralArg(cmsis_rtos_cancel_event)
+        else:
+           self.addVariableArg(cmsis_rtos_cancel_event)
+
+        self.addVariableArg(sds_id)
+
+    @property
+    def typeName(self):
+        return ("SDSAsyncSource")
+
 class SDSRec(GenericSink):
     def __init__(self,name,nb_samples,
                  sds_yml_file=None):

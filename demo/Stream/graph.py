@@ -5,7 +5,9 @@ from cmsis_stream.cg.scheduler import *
 
 # Import definitions used to describe the graph
 from nodes import *
-from sds_nodes import SDSSource, SDSRec
+from sds_nodes import SDSSource, SDSAsyncSource,SDSRec
+
+ASYNCHRONOUS = True 
 
 ACC_BLOCK = 84
 
@@ -14,11 +16,17 @@ ACCELEROMETER_EVENT = 1
 
 accelerometerType=CStructType("accelerometerSample_t",6)
 
-accelerometer = SDSSource("accelerometer",ACC_BLOCK,
-                          sds_yml_file="../Recordings/Accelerometer.sds.yml",
-                          cmsis_rtos_event = ACCELEROMETER_EVENT,
-                          cmsis_rtos_cancel_event = CANCEL_EVENT,
-                          sds_id="demoContext->accId")
+if ASYNCHRONOUS:
+    accelerometer = SDSAsyncSource("accelerometer",ACC_BLOCK,
+                              sds_yml_file="../Recordings/Accelerometer.sds.yml",
+                              cmsis_rtos_cancel_event = CANCEL_EVENT,
+                              sds_id="demoContext->accId")
+else:
+    accelerometer = SDSSource("accelerometer",ACC_BLOCK,
+                              sds_yml_file="../Recordings/Accelerometer.sds.yml",
+                              cmsis_rtos_event = ACCELEROMETER_EVENT,
+                              cmsis_rtos_cancel_event = CANCEL_EVENT,
+                              sds_id="demoContext->accId")
 
 formatAccelerometer = FormatAccelerometer("format",
                                           accelerometerType,
@@ -55,6 +63,8 @@ conf.schedulerCFileName="demo_scheduler"
 conf.prefix="demo_"
 # Name of scheduler function
 conf.schedName="demo_scheduler"
+
+conf.asynchronous = ASYNCHRONOUS
 
 # Enable event recorder tracing in the scheduler
 #conf.eventRecorder=True

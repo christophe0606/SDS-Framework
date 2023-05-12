@@ -111,15 +111,15 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
     /*
     Create FIFOs objects
     */
-    FIFO<int8_t,FIFOSIZE0,1,0> fifo0(demo_buf1);
-    FIFO<accelerometerSample_t,FIFOSIZE1,1,0> fifo1(demo_buf2);
+    FIFO<int8_t,FIFOSIZE0,0,1> fifo0(demo_buf1);
+    FIFO<accelerometerSample_t,FIFOSIZE1,0,1> fifo1(demo_buf2);
 
     CG_BEFORE_NODE_INIT;
     /* 
     Create node objects
     */
     AccelerometerDisplay<accelerometerSample_t,84> accDisplay(fifo1);
-    SDSSource<int8_t,504> accelerometer(fifo0,1,2,osWaitForever,demoContext->accId);
+    SDSAsyncSource<int8_t,504> accelerometer(fifo0,2,demoContext->accId);
     FormatAccelerometer<int8_t,504,accelerometerSample_t,84> format(fifo0,fifo1);
 
     /* Run several schedule iterations */
@@ -131,6 +131,39 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
         for(unsigned long id=0 ; id < 3; id++)
         {
             CG_BEFORE_NODE_EXECUTION;
+
+            cgStaticError = 0;
+            switch(schedule[id])
+            {
+                case 0:
+                {
+                    cgStaticError = accDisplay.prepareForRunning();
+                }
+                break;
+
+                case 1:
+                {
+                    cgStaticError = accelerometer.prepareForRunning();
+                }
+                break;
+
+                case 2:
+                {
+                    cgStaticError = format.prepareForRunning();
+                }
+                break;
+
+                default:
+                break;
+            }
+
+            if (cgStaticError == CG_SKIP_EXECUTION_ID_CODE)
+            { 
+              cgStaticError = 0;
+              continue;
+            }
+
+            CHECKERROR;
 
             switch(schedule[id])
             {
