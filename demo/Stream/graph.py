@@ -28,6 +28,14 @@ else:
                               cmsis_rtos_cancel_event = CANCEL_EVENT,
                               sds_id="demoContext->accId")
 
+accelerometerRec = SDSRec("accelerometerRec",ACC_BLOCK,
+                          sds_yml_file="../Recordings/Accelerometer.sds.yml",
+                          sensor_name="Accelerometer",
+                          rec_buffer="demoContext->recBuf_accelerometer",
+                          rec_buffer_size="demoContext->recBufSize_accelerometer",
+                          rec_threshold="demoContext->recorderAccThreshold"
+                          )
+
 formatAccelerometer = FormatAccelerometer("format",
                                           accelerometerType,
                                           ACC_BLOCK,
@@ -39,6 +47,8 @@ accDisplay = AccelerometerDisplay("accDisplay",accelerometerType,ACC_BLOCK)
 the_graph = Graph()
 
 the_graph.connect(accelerometer.o,formatAccelerometer.i)
+the_graph.connect(accelerometer.o,accelerometerRec.i)
+
 the_graph.connect(formatAccelerometer.o,accDisplay.i)
 
 

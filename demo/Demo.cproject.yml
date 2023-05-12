@@ -34,6 +34,9 @@ project:
         - file: ../sds/source/sds.c
         - file: ../sds/source/sds_rec.c
         - file: ../sds/source/sdsio_socket.c
+      misc:
+        - C:
+          - -DSERVER_IP="{172,22,16,1}"
     - group: stream
       files:
         - file: ./Stream/demo_scheduler.cpp

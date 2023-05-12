@@ -18,6 +18,8 @@ solution:
         - RECORDER_ENABLED
     - type: AVH
       device: ARM::SSE-300-MPS3
+      define:
+        - RECORDER_ENABLED
 
   projects:
     - project: ./Demo.cproject.yml

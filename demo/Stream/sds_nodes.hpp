@@ -2,6 +2,7 @@
 
 #include "cmsis_os2.h"
 #include "sds.h"
+#include "sds_rec.h"
 #include "cg_status.h"
 
 template<typename OUT,int outputSize>
@@ -143,33 +144,39 @@ private:
     FIFOBase<int8_t> &mDst;
 };
 
-template<typename OUT,int outputSize>
+#include <cstdio>
+template<typename OUT,int inputSize>
 class SDSRec;
 
-template<int outputSize>
-class SDSRec<int8_t,outputSize>: 
-GenericSink<int8_t,outputSize>
+template<int inputSize>
+class SDSRec<int8_t,inputSize>: 
+GenericSink<int8_t,inputSize>
 {
 public:
-    SDSRec(FIFOBase<int8_t> &dst):
-    GenericSink<int8_t,outputSize>(dst)
+    SDSRec(FIFOBase<int8_t> &dst,
+           const char *sensorName,
+           uint8_t *recorderBuffer,
+           uint32_t recorderBufferSize,
+           uint32_t recorderThreshold):
+    GenericSink<int8_t,inputSize>(dst)
     {
-        /* recId_accelerometer = sdsRecOpen("Accelerometer",
-                                      recBuf_accelerometer,
-                                      sizeof(recBuf_accelerometer),
-                                      REC_IO_THRESHOLD_ACCELEROMETER);
-*/
+        mRecId = sdsRecOpen(sensorName,
+                            recorderBuffer,
+                            recorderBufferSize,
+                            recorderThreshold);
     };
 
     ~SDSRec()
     {
-        /* sdsRecClose(recId_accelerometer); */
-    }
+        if (mRecId != NULL)
+        {
+           sdsRecClose(mRecId); 
+        }
+    };
 
     int prepareForRunning() final
     {
-        if (this->willOverflow()
-           )
+        if (this->willUnderflow())
         {
            return(CG_SKIP_EXECUTION_ID_CODE); // Skip execution
         }
@@ -179,15 +186,21 @@ public:
 
     int run() final{
         int8_t *b=this->getReadBuffer();
+        if (mRecId == NULL)
+        {
+            return(CG_INIT_FAILURE);
+        }
 
-       /* num = sdsRecWrite(recId_temperatureSensor, timestamp, sensorBuf, buf_size);
-          if (num != buf_size) {
-            printf("%s: Recorder write failed\r\n", sensorConfig_temperatureSensor->name);
-          }
-          */
+        uint32_t timestamp;
+        timestamp = osKernelGetTickCount();
+
+        uint32_t num = sdsRecWrite(mRecId, timestamp, b, inputSize);
+        if (num != inputSize) {
+            return(CG_BUFFER_OVERFLOW);
+        }
         return(CG_SUCCESS);
     };
 
 protected:
-    
+    sdsRecId_t mRecId;
 };

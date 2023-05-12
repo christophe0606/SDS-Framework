@@ -125,11 +125,28 @@ class SDSAsyncSource(GenericSource):
 
 class SDSRec(GenericSink):
     def __init__(self,name,nb_samples,
-                 sds_yml_file=None):
+                 sds_yml_file=None,
+                 sensor_name="Unknown",
+                 rec_buffer=None,
+                 rec_buffer_size=None,
+                 rec_threshold=None):
         GenericSink.__init__(self,name)
         self.sample_size = getSensorSampleSize(sds_yml_file)
         self.addInput("i",CType(SINT8),self.sample_size*nb_samples)
             
+        self.addLiteralArg(sensor_name)
+        self.addVariableArg(rec_buffer)
+
+        if isinstance(rec_buffer_size, int):
+           self.addLiteralArg(rec_buffer_size)
+        else:
+           self.addVariableArg(rec_buffer_size)
+
+        if isinstance(rec_threshold, int):
+           self.addLiteralArg(rec_threshold)
+        else:
+           self.addVariableArg(rec_threshold)
+
     @property
     def typeName(self):
         return ("SDSRec")

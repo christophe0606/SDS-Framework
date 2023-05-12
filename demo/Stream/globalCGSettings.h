@@ -13,5 +13,8 @@ typedef struct {
 
 typedef struct {
   sdsId_t accId;
+  uint8_t *recBuf_accelerometer;
+  uint32_t recBufSize_accelerometer;
+  uint32_t recorderAccThreshold;
 } demoContext_t;
 #endif

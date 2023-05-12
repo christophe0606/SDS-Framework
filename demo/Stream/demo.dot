@@ -23,6 +23,15 @@ accelerometer [label=<
   </TR>
 </TABLE>>];
 
+accelerometerRec [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">accelerometerRec<BR/>(SDSRec)</TD>
+  </TR>
+</TABLE>>];
+
+dup0 [shape=point,label=dup0]
+
 format [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
   <TR>
@@ -32,17 +41,29 @@ format [label=<
 
 
 
-accelerometer:i -> format:i [label="s8(504)"
-,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >504</FONT>
-</TD></TR></TABLE>>
-,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >504</FONT>
-</TD></TR></TABLE>>]
-
 format:i -> accDisplay:i [label="accelerometerSample_t(84)"
 ,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >84</FONT>
 </TD></TR></TABLE>>
 ,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >84</FONT>
 </TD></TR></TABLE>>]
+
+accelerometer:i ->  
+dup0 [label="s8(504)"
+
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >504</FONT>
+</TD></TR></TABLE>>]
+
+ 
+dup0 -> format:i [label="s8(504)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >504</FONT>
+</TD></TR></TABLE>>
+]
+
+ 
+dup0 -> accelerometerRec:i [label="s8(504)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >504</FONT>
+</TD></TR></TABLE>>
+]
 
 
 }

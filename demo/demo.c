@@ -22,9 +22,7 @@
 #include "cmsis_os2.h"
 
 #include "sds.h"
-#ifdef RECORDER_ENABLED
 #include "sds_rec.h"
-#endif
 
 #include "sensor_drv.h"
 #include "sensor_config.h"
@@ -53,7 +51,6 @@
 #define SDS_THRESHOLD_TEMPERATURE_SENSOR    4U
 #endif
 
-#ifdef RECORDER_ENABLED
 #ifndef REC_BUF_SIZE_ACCELEROMETER
 #define REC_BUF_SIZE_ACCELEROMETER          8192U
 #endif
@@ -71,7 +68,6 @@
 #endif
 #ifndef REC_IO_THRESHOLD_TEMPERATURE_SENSOR
 #define REC_IO_THRESHOLD_TEMPERATURE_SENSOR 0
-#endif
 #endif
 
 #ifndef SENSOR_POLLING_INTERVAL
@@ -102,7 +98,6 @@ static uint8_t sdsBuf_accelerometer[SDS_BUF_SIZE_ACCELEROMETER];
 static uint8_t sdsBuf_gyroscope[SDS_BUF_SIZE_ACCELEROMETER];
 static uint8_t sdsBuf_temperatureSensor[SDS_BUF_SIZE_TEMPERATURE_SENSOR];
 
-#ifdef RECORDER_ENABLED
 // Recorder identifiers
 static sdsRecId_t recId_accelerometer                 = NULL;
 static sdsRecId_t recId_gyroscope                     = NULL;
@@ -112,7 +107,6 @@ static sdsRecId_t recId_temperatureSensor             = NULL;
 static uint8_t recBuf_accelerometer[REC_BUF_SIZE_ACCELEROMETER];
 static uint8_t recBuf_gyroscope[REC_BUF_SIZE_GYROSCOPE];
 static uint8_t recBuf_temperatureSensor[REC_BUF_SIZE_TEMPERATURE_SENSOR];
-#endif
 
 // Temporary sensor buffer
 static uint8_t sensorBuf[SENSOR_BUF_SIZE];
@@ -173,12 +167,6 @@ static __NO_RETURN void read_sensors (void *argument) {
           if (num != buf_size) {
             printf("%s: SDS write failed\r\n", sensorConfig_accelerometer->name);
           }
-#ifdef RECORDER_ENABLED
-          num = sdsRecWrite(recId_accelerometer, timestamp, sensorBuf, buf_size);
-          if (num != buf_size) {
-            printf("%s: Recorder write failed\r\n", sensorConfig_accelerometer->name);
-          }
-#endif
         }
       }
 #if 0
@@ -373,10 +361,18 @@ void __NO_RETURN demo(void) {
   //sdsRegisterEvents(sdsId_temperatureSensor, sds_event_callback, SDS_EVENT_DATA_HIGH, NULL);
 
   demoContext.accId = sdsId_accelerometer;
+  demoContext.recBuf_accelerometer = recBuf_accelerometer;
+  demoContext.recBufSize_accelerometer = sizeof(recBuf_accelerometer);
+  demoContext.recorderAccThreshold = REC_IO_THRESHOLD_ACCELEROMETER;
 
 #ifdef RECORDER_ENABLED
   // Initialize recorder
-  sdsRecInit(recorder_event_callback);
+  int32_t err = sdsRecInit(recorder_event_callback);
+  if (err != SDS_REC_OK)
+  {
+     printf("Error initializing recorder\r\n");
+  }
+
 #endif
 
   // Create sensor thread
