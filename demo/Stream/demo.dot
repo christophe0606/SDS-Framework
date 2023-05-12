@@ -1,0 +1,48 @@
+
+
+
+
+digraph structs {
+    node [shape=plaintext]
+    rankdir=LR
+    edge [arrowsize=0.5]
+    fontname="times"
+
+
+accDisplay [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">accDisplay<BR/>(AccelerometerDisplay)</TD>
+  </TR>
+</TABLE>>];
+
+accelerometer [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">accelerometer<BR/>(SDSSource)</TD>
+  </TR>
+</TABLE>>];
+
+format [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">format<BR/>(FormatAccelerometer)</TD>
+  </TR>
+</TABLE>>];
+
+
+
+accelerometer:i -> format:i [label="s8(504)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >504</FONT>
+</TD></TR></TABLE>>
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >504</FONT>
+</TD></TR></TABLE>>]
+
+format:i -> accDisplay:i [label="accelerometerSample_t(84)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >84</FONT>
+</TD></TR></TABLE>>
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >84</FONT>
+</TD></TR></TABLE>>]
+
+
+}

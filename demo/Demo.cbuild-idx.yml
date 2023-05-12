@@ -1,0 +1,15 @@
+build-idx:
+  cdefault: Demo.cdefault.yml
+  csolution: Demo.csolution.yml
+  cprojects:
+    - cproject: Demo.cproject.yml
+      clayers:
+        - clayer: Socket/WiFi/Socket.clayer.yml
+        - clayer: Socket/VSocket/Socket.clayer.yml
+        - clayer: Board/B-U585I-IOT02A/Board.clayer.yml
+        - clayer: Board/AVH_MPS3_Corstone-300/Board.clayer.yml
+  cbuilds:
+    - cbuild: Demo.Debug+AVH.cbuild.yml
+    - cbuild: Demo.Debug+HW.cbuild.yml
+    - cbuild: Demo.Release+AVH.cbuild.yml
+    - cbuild: Demo.Release+HW.cbuild.yml

@@ -29,6 +29,10 @@
 #include "sensor_drv.h"
 #include "sensor_config.h"
 
+#include "globalCGSettings.h"
+#include "demo_scheduler.h"
+#include "cg_status.h"
+
 // Configuration
 #ifndef SDS_BUF_SIZE_ACCELEROMETER
 #define SDS_BUF_SIZE_ACCELEROMETER          8192U
@@ -40,7 +44,7 @@
 #define SDS_BUF_SIZE_TEMPERATURE_SENSOR     128U
 #endif
 #ifndef SDS_THRESHOLD_ACCELEROMETER
-#define SDS_THRESHOLD_ACCELEROMETER         2048U
+#define SDS_THRESHOLD_ACCELEROMETER         504U
 #endif
 #ifndef SDS_THRESHOLD_GYROSCOPE
 #define SDS_THRESHOLD_GYROSCOPE             2048U
@@ -122,6 +126,7 @@ static uint8_t event_close_sent;
 // Thread identifiers
 static osThreadId_t thrId_demo           = NULL;
 static osThreadId_t thrId_read_sensors   = NULL;
+static osThreadId_t thrId_stream         = NULL;
 
 #define EVENT_DATA_ACCELEROMETER        (1U << 0)
 #define EVENT_DATA_GYROSCOPE            (1U << 1)
@@ -133,6 +138,22 @@ static osThreadId_t thrId_read_sensors   = NULL;
 #define EVENT_MASK                      (EVENT_DATA_MASK | EVENT_BUTTON)
 
 #define EVENT_CLOSE                     (1U << 0)
+#define STREAM_CANCEL_EVENT             (1U << 1)
+
+demoContext_t demoContext;
+
+// CMSIS-Stream compute graph thread
+static __NO_RETURN void cmsis_stream (void *argument) {
+  int error=CG_SUCCESS;
+  uint32_t nbIterations;
+  demoContext_t *context=(demoContext_t*)argument;
+
+  nbIterations = demo_scheduler(&error,context);
+  printf("Nb iteration = %d\r\n",nbIterations);
+  printf("Stream error = %d\r\n",error);
+
+  osThreadExit();
+}
 
 // Read sensor thread
 static __NO_RETURN void read_sensors (void *argument) {
@@ -160,7 +181,7 @@ static __NO_RETURN void read_sensors (void *argument) {
 #endif
         }
       }
-
+#if 0
       if (sensorGetStatus(sensorId_gyroscope).active != 0U) {
         num = sizeof(sensorBuf) / sensorConfig_gyroscope->sample_size;
         num = sensorReadSamples(sensorId_gyroscope, num, sensorBuf, sizeof(sensorBuf));
@@ -196,6 +217,7 @@ static __NO_RETURN void read_sensors (void *argument) {
 #endif
         }
       }
+#endif
     } else {
       if (event_close_sent == 0U) {
         event_close_sent = 1U;
@@ -233,13 +255,13 @@ static void sds_event_callback (sdsId_t id, uint32_t event, void *arg) {
 
   if ((event & SDS_EVENT_DATA_HIGH) != 0U) {
     if (id == sdsId_accelerometer) {
-      osThreadFlagsSet(thrId_demo, EVENT_DATA_ACCELEROMETER);
+      osThreadFlagsSet(thrId_stream, EVENT_DATA_ACCELEROMETER);
     }
     if (id == sdsId_gyroscope) {
-      osThreadFlagsSet(thrId_demo, EVENT_DATA_GYROSCOPE);
+      osThreadFlagsSet(thrId_stream, EVENT_DATA_GYROSCOPE);
     }
     if (id == sdsId_temperatureSensor) {
-      osThreadFlagsSet(thrId_demo, EVENT_DATA_TEMPERATURE_SENSOR);
+      osThreadFlagsSet(thrId_stream, EVENT_DATA_TEMPERATURE_SENSOR);
     }
   }
 }
@@ -269,41 +291,23 @@ static void button_event (void) {
   if (active == 0U) {
     active = 1U;
 
+    thrId_stream = osThreadNew(cmsis_stream, (void*)&demoContext,NULL);
+
     // Accelerometer enable
     sdsClear(sdsId_accelerometer);
-#ifdef RECORDER_ENABLED
-    // Open Recorder
-    recId_accelerometer = sdsRecOpen("Accelerometer",
-                                      recBuf_accelerometer,
-                                      sizeof(recBuf_accelerometer),
-                                      REC_IO_THRESHOLD_ACCELEROMETER);
-#endif
     sensorEnable(sensorId_accelerometer);
     printf("Accelerometer enabled\r\n");
 
     // Gyroscope enable
-    sdsClear(sdsId_gyroscope);
-#ifdef RECORDER_ENABLED
-    // Open Recorder
-    recId_gyroscope = sdsRecOpen("Gyroscope",
-                                  recBuf_gyroscope,
-                                  sizeof(recBuf_gyroscope),
-                                  REC_IO_THRESHOLD_GYROSCOPE);
-#endif
-    sensorEnable(sensorId_gyroscope);
-    printf("Gyroscope enabled\r\n");
+    //sdsClear(sdsId_gyroscope);
+    //sensorEnable(sensorId_gyroscope);
+    //printf("Gyroscope enabled\r\n");
 
     // Temperature sensor enable
-    sdsClear(sdsId_temperatureSensor);
-#ifdef RECORDER_ENABLED
-    // Open Recorder;
-    recId_temperatureSensor = sdsRecOpen("Temperature",
-                                          recBuf_temperatureSensor,
-                                          sizeof(recBuf_temperatureSensor),
-                                          REC_IO_THRESHOLD_TEMPERATURE_SENSOR);
-#endif
-    sensorEnable(sensorId_temperatureSensor);
-    printf("Temperature sensor enabled\r\n");
+    //sdsClear(sdsId_temperatureSensor);
+    //sensorEnable(sensorId_temperatureSensor);
+    //printf("Temperature sensor enabled\r\n");
+
   } else {
     event_close_sent = 0U;
     close_flag = 1U;
@@ -311,31 +315,18 @@ static void button_event (void) {
     if ((flags & osFlagsError) == 0U) {
       active = 0U;
 
+      osThreadFlagsSet(thrId_stream, STREAM_CANCEL_EVENT);
+      thrId_stream = NULL;
       // Accelerometer disable
       sensorDisable(sensorId_accelerometer);
-#ifdef RECORDER_ENABLED
-      // Close Recorder
-      sdsRecClose(recId_accelerometer);
-      recId_accelerometer = NULL;
-#endif
       printf("Accelerometer disabled\r\n");
 
       // Gyroscope disable
-      sensorDisable(sensorId_gyroscope);
-#ifdef RECORDER_ENABLED
-      // Close Recorder
-      sdsRecClose(recId_gyroscope);
-      recId_gyroscope = NULL;
-#endif
+      //sensorDisable(sensorId_gyroscope);
       printf("Gyroscope disabled\r\n");
 
       // Temperature sensor disable
-      sensorDisable(sensorId_temperatureSensor);
-#ifdef RECORDER_ENABLED
-      // Close Recorder
-      sdsRecClose(recId_temperatureSensor);
-      recId_temperatureSensor = NULL;
-#endif
+      //sensorDisable(sensorId_temperatureSensor);
       printf("Temperature sensor disabled\r\n");
     }
 
@@ -367,18 +358,21 @@ void __NO_RETURN demo(void) {
                                     sizeof(sdsBuf_accelerometer),
                                     0U, SDS_THRESHOLD_ACCELEROMETER);
                                     
-  sdsId_gyroscope         = sdsOpen(sdsBuf_gyroscope,
+  /*sdsId_gyroscope         = sdsOpen(sdsBuf_gyroscope,
                                     sizeof(sdsBuf_gyroscope),
                                     0U, SDS_THRESHOLD_GYROSCOPE);
 
   sdsId_temperatureSensor = sdsOpen(sdsBuf_temperatureSensor,
                                     sizeof(sdsBuf_temperatureSensor),
                                     0U, SDS_THRESHOLD_TEMPERATURE_SENSOR);
+*/
 
   // Register SDS events
   sdsRegisterEvents(sdsId_accelerometer,     sds_event_callback, SDS_EVENT_DATA_HIGH, NULL);
-  sdsRegisterEvents(sdsId_gyroscope,         sds_event_callback, SDS_EVENT_DATA_HIGH, NULL);
-  sdsRegisterEvents(sdsId_temperatureSensor, sds_event_callback, SDS_EVENT_DATA_HIGH, NULL);
+  //sdsRegisterEvents(sdsId_gyroscope,         sds_event_callback, SDS_EVENT_DATA_HIGH, NULL);
+  //sdsRegisterEvents(sdsId_temperatureSensor, sds_event_callback, SDS_EVENT_DATA_HIGH, NULL);
+
+  demoContext.accId = sdsId_accelerometer;
 
 #ifdef RECORDER_ENABLED
   // Initialize recorder
@@ -401,35 +395,6 @@ void __NO_RETURN demo(void) {
         button_event();
       }
 
-      // Accelerometer data event
-      if ((flags & EVENT_DATA_ACCELEROMETER) != 0U) {
-        num = sdsRead(sdsId_accelerometer, buf, sensorConfig_accelerometer->sample_size);
-        if (num == sensorConfig_accelerometer->sample_size) {
-          printf("%s: x=%i, y=%i, z=%i\r\n",sensorConfig_accelerometer->name,
-                                            data_u16[0], data_u16[1], data_u16[2]);
-        }
-        sdsClear(sdsId_accelerometer);
-      }
-
-      // Gyroscope data event
-      if ((flags & EVENT_DATA_GYROSCOPE) != 0U) {
-        num = sdsRead(sdsId_gyroscope, buf, sensorConfig_gyroscope->sample_size);
-        if (num == sensorConfig_gyroscope->sample_size) {
-          printf("%s: x=%i, y=%i, z=%i\r\n",sensorConfig_gyroscope->name,
-                                            data_u16[0], data_u16[1], data_u16[2]);
-        }
-        sdsClear(sdsId_gyroscope);
-      }
-
-      // Temperature sensor data event
-      if ((flags & EVENT_DATA_TEMPERATURE_SENSOR) != 0U) {
-        for (n = 0U; n < (SDS_THRESHOLD_TEMPERATURE_SENSOR / sensorConfig_temperatureSensor->sample_size); n++) {
-          num = sdsRead(sdsId_temperatureSensor, buf, sensorConfig_temperatureSensor->sample_size);
-          if (num == sensorConfig_temperatureSensor->sample_size) {
-            printf("%s: value=%f\r\n", sensorConfig_temperatureSensor->name, (double)*data_f);
-          }
-        }
-      }
     }
   }
 }
