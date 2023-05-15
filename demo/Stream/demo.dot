@@ -19,14 +19,14 @@ accDisplay [label=<
 accelerometer [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
   <TR>
-    <TD ALIGN="CENTER" PORT="i">accelerometer<BR/>(SDSAsyncSource)</TD>
+    <TD ALIGN="CENTER" PORT="i">accelerometer<BR/>(SDSSensor)</TD>
   </TR>
 </TABLE>>];
 
 accelerometerRec [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
   <TR>
-    <TD ALIGN="CENTER" PORT="i">accelerometerRec<BR/>(SDSRec)</TD>
+    <TD ALIGN="CENTER" PORT="i">accelerometerRec<BR/>(SDSRecorder)</TD>
   </TR>
 </TABLE>>];
 

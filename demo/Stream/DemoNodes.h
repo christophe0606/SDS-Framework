@@ -1,7 +1,10 @@
 #ifndef _DEMO_NODES_H_ 
 #define _DEMO_NODES_H_
 
-#include "sds_nodes.hpp"
+#include "sds_cg_types.h"
+#include "sds_sensor.hpp"
+#include "sds_recorder.hpp"
+
 #include "cg_status.h"
 
 #include <cstdio>

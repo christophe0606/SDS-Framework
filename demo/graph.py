@@ -4,10 +4,11 @@
 from cmsis_stream.cg.scheduler import *
 
 # Import definitions used to describe the graph
-from nodes import *
-from sds_nodes import SDSSource, SDSAsyncSource,SDSRec
+from Stream.nodes import *
+from Stream.sds_nodes import SDSSensor, SDSAsyncSensor,SDSRecorder
 
-ASYNCHRONOUS = True 
+ASYNCHRONOUS = False 
+RECORDER = True
 
 ACC_BLOCK = 84
 
@@ -17,23 +18,17 @@ ACCELEROMETER_EVENT = 1
 accelerometerType=CStructType("accelerometerSample_t",6)
 
 if ASYNCHRONOUS:
-    accelerometer = SDSAsyncSource("accelerometer",ACC_BLOCK,
-                              sds_yml_file="../Recordings/Accelerometer.sds.yml",
-                              cmsis_rtos_cancel_event = CANCEL_EVENT,
-                              sds_id="demoContext->accId")
+    accelerometer = SDSAsyncSensor("accelerometer",ACC_BLOCK,
+                              sds_yml_file="Recordings/Accelerometer.sds.yml",
+                              sds_connection="demoContext->sensorConn_accelerometer")
 else:
-    accelerometer = SDSSource("accelerometer",ACC_BLOCK,
-                              sds_yml_file="../Recordings/Accelerometer.sds.yml",
-                              cmsis_rtos_event = ACCELEROMETER_EVENT,
-                              cmsis_rtos_cancel_event = CANCEL_EVENT,
-                              sds_id="demoContext->accId")
+    accelerometer = SDSSensor("accelerometer",ACC_BLOCK,
+                              sds_yml_file="Recordings/Accelerometer.sds.yml",
+                              sds_connection="demoContext->sensorConn_accelerometer")
 
-accelerometerRec = SDSRec("accelerometerRec",ACC_BLOCK,
-                          sds_yml_file="../Recordings/Accelerometer.sds.yml",
-                          sensor_name="Accelerometer",
-                          rec_buffer="demoContext->recBuf_accelerometer",
-                          rec_buffer_size="demoContext->recBufSize_accelerometer",
-                          rec_threshold="demoContext->recorderAccThreshold"
+accelerometerRec = SDSRecorder("accelerometerRec",ACC_BLOCK,
+                          sds_yml_file="Recordings/Accelerometer.sds.yml",
+                          sds_connection="demoContext->recConn_accelerometer"
                           )
 
 formatAccelerometer = FormatAccelerometer("format",
@@ -47,10 +42,24 @@ accDisplay = AccelerometerDisplay("accDisplay",accelerometerType,ACC_BLOCK)
 the_graph = Graph()
 
 the_graph.connect(accelerometer.o,formatAccelerometer.i)
-the_graph.connect(accelerometer.o,accelerometerRec.i)
-
 the_graph.connect(formatAccelerometer.o,accDisplay.i)
 
+if RECORDER:
+    the_graph.connect(accelerometer.o,accelerometerRec.i)
+
+header="""#ifndef _REC_CONFIG_H_
+#define _REC_CONFIG_H_
+
+%s
+
+#endif
+"""
+
+with open("recorder_config.h","w") as f:
+    r = "" 
+    if RECORDER:
+        r = "#define RECORDER_USED\n"
+    print(header % r,file=f)
 
 ##############################
 #
@@ -87,7 +96,7 @@ sched = the_graph.computeSchedule(config=conf)
 print("Schedule length = %d" % sched.scheduleLength)
 print("Memory usage %d bytes" % sched.memory)
 
-sched.ccode(".",conf)
+sched.ccode("./Stream",conf)
 
-with open("demo.dot","w") as f:
+with open("Stream/demo.dot","w") as f:
     sched.graphviz(f,config=conf)

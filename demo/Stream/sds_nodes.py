@@ -1,9 +1,6 @@
 from cmsis_stream.cg.scheduler import *
 import yaml
 
-class NumberOfSamplesMissingForIO(Exception):
-    pass
-
 # Open SDS data file in read mode
 def openFile(file_name):
     try:
@@ -69,84 +66,44 @@ def getSensorSampleSize(file_name):
 
     return(sampleSize)
 
-class SDSSource(GenericSource):
+class SDSSensor(GenericSource):
     def __init__(self,name,nb_samples,
         sds_yml_file=None,
-        cmsis_rtos_event=None,
-        cmsis_rtos_cancel_event=None,
-        timeout="osWaitForever",
-        sds_id = None):
+        sds_connection=None):
         GenericSource.__init__(self,name)
         self.sample_size = getSensorSampleSize(sds_yml_file)
         self.addOutput("o",CType(SINT8),self.sample_size*nb_samples)
         
-        if isinstance(cmsis_rtos_event, int):
-           self.addLiteralArg(cmsis_rtos_event)
-        else:
-           self.addVariableArg(cmsis_rtos_event)
-
-        if isinstance(cmsis_rtos_cancel_event, int):
-           self.addLiteralArg(cmsis_rtos_cancel_event)
-        else:
-           self.addVariableArg(cmsis_rtos_cancel_event)
-
-        if isinstance(timeout, int):
-           self.addLiteralArg(timeout)
-        else:
-           self.addVariableArg(timeout)
-
-        self.addVariableArg(sds_id)
+        self.addVariableArg(sds_connection)
 
     @property
     def typeName(self):
-        return ("SDSSource")
+        return ("SDSSensor")
 
-class SDSAsyncSource(GenericSource):
+class SDSAsyncSensor(GenericSource):
     def __init__(self,name,nb_samples,
         sds_yml_file=None,
-        cmsis_rtos_event=None,
-        cmsis_rtos_cancel_event=None,
-        timeout="osWaitForever",
-        sds_id = None):
+        sds_connection=None):
         GenericSource.__init__(self,name)
         self.sample_size = getSensorSampleSize(sds_yml_file)
         self.addOutput("o",CType(SINT8),self.sample_size*nb_samples)
         
-        if isinstance(cmsis_rtos_cancel_event, int):
-           self.addLiteralArg(cmsis_rtos_cancel_event)
-        else:
-           self.addVariableArg(cmsis_rtos_cancel_event)
-
-        self.addVariableArg(sds_id)
+        self.addVariableArg(sds_connection)
 
     @property
     def typeName(self):
-        return ("SDSAsyncSource")
+        return ("SDSAsyncSensor")
 
-class SDSRec(GenericSink):
+class SDSRecorder(GenericSink):
     def __init__(self,name,nb_samples,
                  sds_yml_file=None,
-                 sensor_name="Unknown",
-                 rec_buffer=None,
-                 rec_buffer_size=None,
-                 rec_threshold=None):
+                 sds_connection=None):
         GenericSink.__init__(self,name)
         self.sample_size = getSensorSampleSize(sds_yml_file)
         self.addInput("i",CType(SINT8),self.sample_size*nb_samples)
             
-        self.addLiteralArg(sensor_name)
-        self.addVariableArg(rec_buffer)
-
-        if isinstance(rec_buffer_size, int):
-           self.addLiteralArg(rec_buffer_size)
-        else:
-           self.addVariableArg(rec_buffer_size)
-
-        if isinstance(rec_threshold, int):
-           self.addLiteralArg(rec_threshold)
-        else:
-           self.addVariableArg(rec_threshold)
+        self.addVariableArg(sds_connection)
 
     @property
     def typeName(self):
-        return ("SDSRec")
+        return ("SDSRecorder")

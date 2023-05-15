@@ -31,6 +31,8 @@
 #include "demo_scheduler.h"
 #include "cg_status.h"
 
+#include "recorder_config.h"
+
 // Configuration
 #ifndef SDS_BUF_SIZE_ACCELEROMETER
 #define SDS_BUF_SIZE_ACCELEROMETER          8192U
@@ -93,6 +95,11 @@ static sdsId_t sdsId_accelerometer                    = NULL;
 static sdsId_t sdsId_gyroscope                        = NULL;
 static sdsId_t sdsId_temperatureSensor                = NULL;
 
+// SDS CG Connection
+static sds_sensor_cg_connection_t sensorConn_accelerometer;
+static sds_sensor_cg_connection_t sensorConn_gyroscope;
+static sds_sensor_cg_connection_t sensorConn_temperatureSensor;
+
 // SDS buffers
 static uint8_t sdsBuf_accelerometer[SDS_BUF_SIZE_ACCELEROMETER];
 static uint8_t sdsBuf_gyroscope[SDS_BUF_SIZE_ACCELEROMETER];
@@ -102,6 +109,11 @@ static uint8_t sdsBuf_temperatureSensor[SDS_BUF_SIZE_TEMPERATURE_SENSOR];
 static sdsRecId_t recId_accelerometer                 = NULL;
 static sdsRecId_t recId_gyroscope                     = NULL;
 static sdsRecId_t recId_temperatureSensor             = NULL;
+
+// SDS CG Connection 
+static sds_recorder_cg_connection_t recConn_accelerometer;
+static sds_recorder_cg_connection_t recConn_gyroscope;
+static sds_recorder_cg_connection_t recConn_temperatureSensor;
 
 // Recorder buffers
 static uint8_t recBuf_accelerometer[REC_BUF_SIZE_ACCELEROMETER];
@@ -132,7 +144,8 @@ static osThreadId_t thrId_stream         = NULL;
 #define EVENT_MASK                      (EVENT_DATA_MASK | EVENT_BUTTON)
 
 #define EVENT_CLOSE                     (1U << 0)
-#define STREAM_CANCEL_EVENT             (1U << 1)
+// Event sent to compute graph thread
+#define EVENT_STREAM_CANCEL             (1U << 4)
 
 demoContext_t demoContext;
 
@@ -179,7 +192,7 @@ static __NO_RETURN void read_sensors (void *argument) {
           if (num != buf_size) {
             printf("%s: SDS write failed\r\n", sensorConfig_gyroscope->name);
           }
-#ifdef RECORDER_ENABLED
+#ifdef RECORDER_USED
           num = sdsRecWrite(recId_gyroscope, timestamp, sensorBuf, buf_size);
           if (num != buf_size) {
             printf("%s: Recorder write failed\r\n", sensorConfig_gyroscope->name);
@@ -197,7 +210,7 @@ static __NO_RETURN void read_sensors (void *argument) {
           if (num != buf_size) {
             printf("%s: SDS write failed\r\n", sensorConfig_temperatureSensor->name);
           }
-#ifdef RECORDER_ENABLED
+#ifdef RECORDER_USED
           num = sdsRecWrite(recId_temperatureSensor, timestamp, sensorBuf, buf_size);
           if (num != buf_size) {
             printf("%s: Recorder write failed\r\n", sensorConfig_temperatureSensor->name);
@@ -255,7 +268,7 @@ static void sds_event_callback (sdsId_t id, uint32_t event, void *arg) {
 }
 
 // Recorder event callback
-#ifdef RECORDER_ENABLED
+#ifdef RECORDER_USED
 static void recorder_event_callback (sdsRecId_t id, uint32_t event) {
   if (event & SDS_REC_EVENT_IO_ERROR) {
     if (id == recId_accelerometer) {
@@ -303,7 +316,7 @@ static void button_event (void) {
     if ((flags & osFlagsError) == 0U) {
       active = 0U;
 
-      osThreadFlagsSet(thrId_stream, STREAM_CANCEL_EVENT);
+      osThreadFlagsSet(thrId_stream, EVENT_STREAM_CANCEL);
       thrId_stream = NULL;
       // Accelerometer disable
       sensorDisable(sensorId_accelerometer);
@@ -360,18 +373,28 @@ void __NO_RETURN demo(void) {
   //sdsRegisterEvents(sdsId_gyroscope,         sds_event_callback, SDS_EVENT_DATA_HIGH, NULL);
   //sdsRegisterEvents(sdsId_temperatureSensor, sds_event_callback, SDS_EVENT_DATA_HIGH, NULL);
 
-  demoContext.accId = sdsId_accelerometer;
-  demoContext.recBuf_accelerometer = recBuf_accelerometer;
-  demoContext.recBufSize_accelerometer = sizeof(recBuf_accelerometer);
-  demoContext.recorderAccThreshold = REC_IO_THRESHOLD_ACCELEROMETER;
+  sensorConn_accelerometer.event = EVENT_DATA_ACCELEROMETER; 
+  sensorConn_accelerometer.cancel_event = EVENT_STREAM_CANCEL; 
+  sensorConn_accelerometer.timeout = osWaitForever;
+  sensorConn_accelerometer.sdsId = sdsId_accelerometer;
 
-#ifdef RECORDER_ENABLED
+  recConn_accelerometer.sensorName="Accelerometer";
+  recConn_accelerometer.recorderBuffer=recBuf_accelerometer;
+  recConn_accelerometer.recorderBufferSize=REC_BUF_SIZE_ACCELEROMETER;
+  recConn_accelerometer.recorderThreshold=REC_IO_THRESHOLD_ACCELEROMETER;
+
+  demoContext.sensorConn_accelerometer = &sensorConn_accelerometer;
+  demoContext.recConn_accelerometer = &recConn_accelerometer;
+
+#ifdef RECORDER_USED
+  #ifdef RECORDER_USED
   // Initialize recorder
   int32_t err = sdsRecInit(recorder_event_callback);
   if (err != SDS_REC_OK)
   {
      printf("Error initializing recorder\r\n");
   }
+  #endif
 
 #endif
 
@@ -382,7 +405,7 @@ void __NO_RETURN demo(void) {
   osThreadNew(button, NULL, NULL);
 
   for(;;) {
-    flags = osThreadFlagsWait(EVENT_MASK, osFlagsWaitAny, osWaitForever);
+    flags = osThreadFlagsWait(EVENT_BUTTON, osFlagsWaitAny, osWaitForever);
     if ((flags & osFlagsError) == 0U) {
 
       // Button pressed event

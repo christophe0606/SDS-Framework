@@ -121,18 +121,18 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
     /*
     Create FIFOs objects
     */
-    FIFO<accelerometerSample_t,FIFOSIZE0,0,1> fifo0(demo_buf1);
-    FIFO<int8_t,FIFOSIZE1,0,1> fifo1(demo_buf2);
-    FIFO<int8_t,FIFOSIZE2,0,1> fifo2(demo_buf3);
-    FIFO<int8_t,FIFOSIZE3,0,1> fifo3(demo_buf4);
+    FIFO<accelerometerSample_t,FIFOSIZE0,1,0> fifo0(demo_buf1);
+    FIFO<int8_t,FIFOSIZE1,1,0> fifo1(demo_buf2);
+    FIFO<int8_t,FIFOSIZE2,1,0> fifo2(demo_buf3);
+    FIFO<int8_t,FIFOSIZE3,1,0> fifo3(demo_buf4);
 
     CG_BEFORE_NODE_INIT;
     /* 
     Create node objects
     */
     AccelerometerDisplay<accelerometerSample_t,84> accDisplay(fifo0);
-    SDSAsyncSource<int8_t,504> accelerometer(fifo1,2,demoContext->accId);
-    SDSRec<int8_t,504> accelerometerRec(fifo3,"Accelerometer",demoContext->recBuf_accelerometer,demoContext->recBufSize_accelerometer,demoContext->recorderAccThreshold);
+    SDSSensor<int8_t,504> accelerometer(fifo1,demoContext->sensorConn_accelerometer);
+    SDSRecorder<int8_t,504> accelerometerRec(fifo3,demoContext->recConn_accelerometer);
     Duplicate2<int8_t,504,int8_t,504,int8_t,504> dup0(fifo1,fifo2,fifo3);
     FormatAccelerometer<int8_t,504,accelerometerSample_t,84> format(fifo2,fifo0);
 
@@ -145,51 +145,6 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
         for(unsigned long id=0 ; id < 5; id++)
         {
             CG_BEFORE_NODE_EXECUTION;
-
-            cgStaticError = 0;
-            switch(schedule[id])
-            {
-                case 0:
-                {
-                    cgStaticError = accDisplay.prepareForRunning();
-                }
-                break;
-
-                case 1:
-                {
-                    cgStaticError = accelerometer.prepareForRunning();
-                }
-                break;
-
-                case 2:
-                {
-                    cgStaticError = accelerometerRec.prepareForRunning();
-                }
-                break;
-
-                case 3:
-                {
-                    cgStaticError = dup0.prepareForRunning();
-                }
-                break;
-
-                case 4:
-                {
-                    cgStaticError = format.prepareForRunning();
-                }
-                break;
-
-                default:
-                break;
-            }
-
-            if (cgStaticError == CG_SKIP_EXECUTION_ID_CODE)
-            { 
-              cgStaticError = 0;
-              continue;
-            }
-
-            CHECKERROR;
 
             switch(schedule[id])
             {
