@@ -7,12 +7,21 @@ from cmsis_stream.cg.scheduler import *
 from Stream.nodes import *
 from Stream.sds_nodes import SDSSensor,SDSRecorder
 
-ASYNCHRONOUS = False 
-RECORDER = True
+ASYNCHRONOUS = True 
+RECORDER = False
 
-ACC_BLOCK = 1667
-GYRO_BLOCK = 1667
-TEMP_BLOCK = 1
+if ASYNCHRONOUS:
+   ACC_BLOCK = 100
+   GYRO_BLOCK = 100
+   TEMP_BLOCK = 1
+
+   VEC_RECORD = 100
+else:
+   ACC_BLOCK = 1667
+   GYRO_BLOCK = 1667
+   TEMP_BLOCK = 1
+
+   VEC_RECORD = 1667
 
 CANCEL_EVENT = 2
 ACCELEROMETER_EVENT = 1
@@ -32,12 +41,12 @@ temperature = SDSSensor("temperatureSensor",TEMP_BLOCK,
                           sds_connection="demoContext->sensorConn_temperatureSensor",
                           asynchronous=ASYNCHRONOUS)
 
-accelerometerRec = SDSRecorder("accelerometerRecorder",ACC_BLOCK,
+accelerometerRec = SDSRecorder("accelerometerRecorder",VEC_RECORD,
                           sds_yml_file="Recordings/Accelerometer.sds.yml",
                           sds_connection="demoContext->recConn_accelerometer"
                           )
 
-gyroscopeRec = SDSRecorder("gyroscopeRecorder",GYRO_BLOCK,
+gyroscopeRec = SDSRecorder("gyroscopeRecorder",VEC_RECORD,
                           sds_yml_file="Recordings/Gyroscope.sds.yml",
                           sds_connection="demoContext->recConn_gyroscope"
                           )
@@ -84,6 +93,7 @@ header="""#ifndef _REC_CONFIG_H_
 #define _REC_CONFIG_H_
 
 %s
+%s
 
 #endif
 """
@@ -92,7 +102,10 @@ with open("recorder_config.h","w") as f:
     r = "" 
     if RECORDER:
         r = "#define RECORDER_USED\n"
-    print(header % r,file=f)
+    a = ""
+    if ASYNCHRONOUS:
+        a = "#define ASYNCHRONOUS\n"
+    print(header % (r,a),file=f)
 
 ##############################
 #

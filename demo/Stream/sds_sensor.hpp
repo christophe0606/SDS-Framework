@@ -140,7 +140,7 @@ public:
         /* Try to read as much as we can save in the
            output FIFO */
         uint32_t num = sdsRead(mSDS->sdsId, b, mToRead);
-            
+        
         return(CG_SUCCESS);
     };
 

@@ -33,43 +33,12 @@
 
 #include "recorder_config.h"
 
-// Configuration
-#ifndef SDS_BUF_SIZE_ACCELEROMETER
-#define SDS_BUF_SIZE_ACCELEROMETER          20000U
-#endif
-#ifndef SDS_BUF_SIZE_GYROSCOPE
-#define SDS_BUF_SIZE_GYROSCOPE              20000U
-#endif
-#ifndef SDS_BUF_SIZE_TEMPERATURE_SENSOR
-#define SDS_BUF_SIZE_TEMPERATURE_SENSOR     128U
-#endif
-#ifndef SDS_THRESHOLD_ACCELEROMETER
-#define SDS_THRESHOLD_ACCELEROMETER         10002U
-#endif
-#ifndef SDS_THRESHOLD_GYROSCOPE
-#define SDS_THRESHOLD_GYROSCOPE             10002U
-#endif
-#ifndef SDS_THRESHOLD_TEMPERATURE_SENSOR
-#define SDS_THRESHOLD_TEMPERATURE_SENSOR    4U
-#endif
-
-#ifndef REC_BUF_SIZE_ACCELEROMETER
-#define REC_BUF_SIZE_ACCELEROMETER          16384U
-#endif
-#ifndef REC_BUF_SIZE_GYROSCOPE
-#define REC_BUF_SIZE_GYROSCOPE              16384U
-#endif
-#ifndef REC_BUF_SIZE_TEMPERATURE_SENSOR
-#define REC_BUF_SIZE_TEMPERATURE_SENSOR     256U
-#endif
-#ifndef REC_IO_THRESHOLD_ACCELEROMETER
-#define REC_IO_THRESHOLD_ACCELEROMETER      0
-#endif
-#ifndef REC_IO_THRESHOLD_GYROSCOPE
-#define REC_IO_THRESHOLD_GYROSCOPE          0
-#endif
-#ifndef REC_IO_THRESHOLD_TEMPERATURE_SENSOR
-#define REC_IO_THRESHOLD_TEMPERATURE_SENSOR 0
+#ifdef ASYNCHRONOUS
+// Configuration for asynchronous mode
+#include "configs/asynchronous_with_temp.h"
+#else
+// Configuration for synchronous mode
+#include "configs/synchronous_with_temp.h"
 #endif
 
 #ifndef SENSOR_POLLING_INTERVAL

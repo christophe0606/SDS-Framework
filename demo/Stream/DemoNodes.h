@@ -22,8 +22,7 @@ public:
 
     int prepareForRunning() final
     {
-        if (this->willUnderflow()
-           )
+        if (this->willUnderflow())
         {
            return(CG_SKIP_EXECUTION_ID_CODE); // Skip execution
         }
@@ -62,8 +61,7 @@ public:
     int prepareForRunning() final
     {
         if (this->willOverflow() ||
-            this->willUnderflow()
-           )
+            this->willUnderflow())
         {
            return(CG_SKIP_EXECUTION_ID_CODE); // Skip execution
         }
@@ -204,60 +202,74 @@ public:
      mSrc3(src3),
      mDst1(dst1),
      mDst2(dst2),
-     mDst3(dst3){};
+     mDst3(dst3){
+        canRun1=true;
+        canRun2=true;
+        canRun3=true;
+     };
 
 public:
     int prepareForRunning() final
     {
-        if (this->willUnderflow1())
+        if ((this->willUnderflow1()) || (this->willOverflow1()))
         {
-           return(CG_SKIP_EXECUTION_ID_CODE); // Skip execution
+            canRun1 = false;
+        }
+        else
+        {
+            canRun1=true;
         }
 
-        if (this->willUnderflow2())
+        if ((this->willUnderflow2()) || (this->willOverflow2()))
         {
-           return(CG_SKIP_EXECUTION_ID_CODE); // Skip execution
+            canRun2 = false;
+        }
+        else
+        {
+            canRun2=true;
         }
 
-        if (this->willUnderflow3())
+        if ((this->willUnderflow3()) || (this->willOverflow3()))
         {
-           return(CG_SKIP_EXECUTION_ID_CODE); // Skip execution
+            canRun3 = false;
+        }
+        else
+        {
+            canRun3=true;
         }
 
-        if (this->willOverflow1())
+        if ((!canRun1) && (!canRun2) && (!canRun3))
         {
-           return(CG_SKIP_EXECUTION_ID_CODE); // Skip execution
+            return(CG_SKIP_EXECUTION_ID_CODE);
         }
-
-        if (this->willOverflow2())
-        {
-           return(CG_SKIP_EXECUTION_ID_CODE); // Skip execution
-        }
-
-        if (this->willOverflow3())
-        {
-           return(CG_SKIP_EXECUTION_ID_CODE); // Skip execution
-        }
-
         return(CG_SUCCESS);
     };
 
     int run() final
     {
-        IN1 *in1=this->getReadBuffer1();
-        IN1 *out1=this->getWriteBuffer1();
+        if (canRun1)
+        {
+           IN1 *in1=this->getReadBuffer1();
+           IN1 *out1=this->getWriteBuffer1();
 
-        memcpy(out1,in1,sizeof(IN1)*inputSize1);
+           memcpy(out1,in1,sizeof(IN1)*inputSize1);
+        }
 
-        IN2 *in2=this->getReadBuffer2();
-        IN2 *out2=this->getWriteBuffer2();
+        if (canRun2)
+        {
+            IN2 *in2=this->getReadBuffer2();
+            IN2 *out2=this->getWriteBuffer2();
+        
+            memcpy(out2,in2,sizeof(IN2)*inputSize2);
+        }
 
-        memcpy(out2,in2,sizeof(IN2)*inputSize2);
-
-        IN3 *in3=this->getReadBuffer3();
-        IN3 *out3=this->getWriteBuffer3();
-
-        memcpy(out3,in3,sizeof(IN3)*inputSize3);
+        if (canRun3)
+        {
+            IN3 *in3=this->getReadBuffer3();
+            IN3 *out3=this->getWriteBuffer3();
+        
+            memcpy(out3,in3,sizeof(IN3)*inputSize3);
+        }
 
         return(CG_SUCCESS);
     };
@@ -281,6 +293,9 @@ protected:
      bool willOverflow3(int nb = inputSize3){return mDst3.willOverflowWith(nb);};
      bool willUnderflow3(int nb = inputSize3){return mSrc3.willUnderflowWith(nb);};
 
+     bool canRun1;
+     bool canRun2;
+     bool canRun3;
 
 private:
     FIFOBase<IN1> &mSrc1;
