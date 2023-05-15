@@ -12,10 +12,16 @@ typedef struct {
   uint16_t x;
   uint16_t y;
   uint16_t z;
-} accelerometerSample_t;
+} vectorSample_t;
 
 typedef struct {
   sds_sensor_cg_connection_t *sensorConn_accelerometer;
   sds_recorder_cg_connection_t *recConn_accelerometer;
+
+  sds_sensor_cg_connection_t *sensorConn_gyroscope;
+  sds_recorder_cg_connection_t *recConn_gyroscope;
+
+  sds_sensor_cg_connection_t *sensorConn_temperatureSensor;
+  sds_recorder_cg_connection_t *recConn_temperatureSensor;
 } demoContext_t;
 #endif

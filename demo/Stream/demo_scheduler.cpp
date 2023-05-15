@@ -78,9 +78,9 @@ CG_AFTER_INCLUDES
 Description of the scheduling. 
 
 */
-static unsigned int schedule[5]=
+static unsigned int schedule[10]=
 { 
-1,3,2,4,0,
+1,3,7,4,9,5,2,0,6,8,
 };
 
 CG_BEFORE_FIFO_BUFFERS
@@ -89,26 +89,51 @@ CG_BEFORE_FIFO_BUFFERS
 FIFO buffers
 
 ************/
-#define FIFOSIZE0 84
-#define FIFOSIZE1 504
-#define FIFOSIZE2 504
-#define FIFOSIZE3 504
+#define FIFOSIZE0 10002
+#define FIFOSIZE1 10002
+#define FIFOSIZE2 4
+#define FIFOSIZE3 1667
+#define FIFOSIZE4 1667
+#define FIFOSIZE5 1
+#define FIFOSIZE6 1667
+#define FIFOSIZE7 1667
+#define FIFOSIZE8 1
 
-#define BUFFERSIZE1 84
+#define BUFFERSIZE1 10002
 CG_BEFORE_BUFFER
-accelerometerSample_t demo_buf1[BUFFERSIZE1]={0};
+int8_t demo_buf1[BUFFERSIZE1]={0};
 
-#define BUFFERSIZE2 504
+#define BUFFERSIZE2 10002
 CG_BEFORE_BUFFER
 int8_t demo_buf2[BUFFERSIZE2]={0};
 
-#define BUFFERSIZE3 504
+#define BUFFERSIZE3 4
 CG_BEFORE_BUFFER
 int8_t demo_buf3[BUFFERSIZE3]={0};
 
-#define BUFFERSIZE4 504
+#define BUFFERSIZE4 1667
 CG_BEFORE_BUFFER
-int8_t demo_buf4[BUFFERSIZE4]={0};
+vectorSample_t demo_buf4[BUFFERSIZE4]={0};
+
+#define BUFFERSIZE5 1667
+CG_BEFORE_BUFFER
+vectorSample_t demo_buf5[BUFFERSIZE5]={0};
+
+#define BUFFERSIZE6 1
+CG_BEFORE_BUFFER
+float demo_buf6[BUFFERSIZE6]={0};
+
+#define BUFFERSIZE7 1667
+CG_BEFORE_BUFFER
+vectorSample_t demo_buf7[BUFFERSIZE7]={0};
+
+#define BUFFERSIZE8 1667
+CG_BEFORE_BUFFER
+vectorSample_t demo_buf8[BUFFERSIZE8]={0};
+
+#define BUFFERSIZE9 1
+CG_BEFORE_BUFFER
+float demo_buf9[BUFFERSIZE9]={0};
 
 
 CG_BEFORE_SCHEDULER_FUNCTION
@@ -121,20 +146,30 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
     /*
     Create FIFOs objects
     */
-    FIFO<accelerometerSample_t,FIFOSIZE0,1,0> fifo0(demo_buf1);
+    FIFO<int8_t,FIFOSIZE0,1,0> fifo0(demo_buf1);
     FIFO<int8_t,FIFOSIZE1,1,0> fifo1(demo_buf2);
     FIFO<int8_t,FIFOSIZE2,1,0> fifo2(demo_buf3);
-    FIFO<int8_t,FIFOSIZE3,1,0> fifo3(demo_buf4);
+    FIFO<vectorSample_t,FIFOSIZE3,1,0> fifo3(demo_buf4);
+    FIFO<vectorSample_t,FIFOSIZE4,1,0> fifo4(demo_buf5);
+    FIFO<float,FIFOSIZE5,1,0> fifo5(demo_buf6);
+    FIFO<vectorSample_t,FIFOSIZE6,1,0> fifo6(demo_buf7);
+    FIFO<vectorSample_t,FIFOSIZE7,1,0> fifo7(demo_buf8);
+    FIFO<float,FIFOSIZE8,1,0> fifo8(demo_buf9);
 
     CG_BEFORE_NODE_INIT;
     /* 
     Create node objects
     */
-    AccelerometerDisplay<accelerometerSample_t,84> accDisplay(fifo0);
-    SDSSensor<int8_t,504> accelerometer(fifo1,demoContext->sensorConn_accelerometer);
-    SDSRecorder<int8_t,504> accelerometerRec(fifo3,demoContext->recConn_accelerometer);
-    Duplicate2<int8_t,504,int8_t,504,int8_t,504> dup0(fifo1,fifo2,fifo3);
-    FormatAccelerometer<int8_t,504,accelerometerSample_t,84> format(fifo2,fifo0);
+    VectorDisplay<vectorSample_t,1667> accelerometer(fifo6,"accelerometer");
+    SDSSensor<int8_t,10002> accelerometerSensor(fifo0,demoContext->sensorConn_accelerometer);
+    App<vectorSample_t,1667,vectorSample_t,1667,float,1,vectorSample_t,1667,vectorSample_t,1667,float,1> application(fifo3,fifo4,fifo5,fifo6,fifo7,fifo8);
+    FormatVector<int8_t,10002,vectorSample_t,1667> formatAcc(fifo0,fifo3);
+    FormatVector<int8_t,10002,vectorSample_t,1667> formatGyro(fifo1,fifo4);
+    FormatTemperature<int8_t,4,float,1> formatTemp(fifo2,fifo5);
+    VectorDisplay<vectorSample_t,1667> gyroscope(fifo7,"gyroscope");
+    SDSSensor<int8_t,10002> gyroscopeSensor(fifo1,demoContext->sensorConn_gyroscope);
+    TemperatureDisplay<float,1> temperature(fifo8);
+    SDSSensor<int8_t,4> temperatureSensor(fifo2,demoContext->sensorConn_temperatureSensor);
 
     /* Run several schedule iterations */
     CG_BEFORE_SCHEDULE;
@@ -142,7 +177,7 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
     {
         /* Run a schedule iteration */
         CG_BEFORE_ITERATION;
-        for(unsigned long id=0 ; id < 5; id++)
+        for(unsigned long id=0 ; id < 10; id++)
         {
             CG_BEFORE_NODE_EXECUTION;
 
@@ -150,31 +185,61 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
             {
                 case 0:
                 {
-                   cgStaticError = accDisplay.run();
+                   cgStaticError = accelerometer.run();
                 }
                 break;
 
                 case 1:
                 {
-                   cgStaticError = accelerometer.run();
+                   cgStaticError = accelerometerSensor.run();
                 }
                 break;
 
                 case 2:
                 {
-                   cgStaticError = accelerometerRec.run();
+                   cgStaticError = application.run();
                 }
                 break;
 
                 case 3:
                 {
-                   cgStaticError = dup0.run();
+                   cgStaticError = formatAcc.run();
                 }
                 break;
 
                 case 4:
                 {
-                   cgStaticError = format.run();
+                   cgStaticError = formatGyro.run();
+                }
+                break;
+
+                case 5:
+                {
+                   cgStaticError = formatTemp.run();
+                }
+                break;
+
+                case 6:
+                {
+                   cgStaticError = gyroscope.run();
+                }
+                break;
+
+                case 7:
+                {
+                   cgStaticError = gyroscopeSensor.run();
+                }
+                break;
+
+                case 8:
+                {
+                   cgStaticError = temperature.run();
+                }
+                break;
+
+                case 9:
+                {
+                   cgStaticError = temperatureSensor.run();
                 }
                 break;
 

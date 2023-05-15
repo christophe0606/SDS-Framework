@@ -69,30 +69,21 @@ def getSensorSampleSize(file_name):
 class SDSSensor(GenericSource):
     def __init__(self,name,nb_samples,
         sds_yml_file=None,
-        sds_connection=None):
+        sds_connection=None,
+        asynchronous=False):
         GenericSource.__init__(self,name)
         self.sample_size = getSensorSampleSize(sds_yml_file)
         self.addOutput("o",CType(SINT8),self.sample_size*nb_samples)
         
         self.addVariableArg(sds_connection)
+        self._asynchronous = asynchronous
 
     @property
     def typeName(self):
-        return ("SDSSensor")
-
-class SDSAsyncSensor(GenericSource):
-    def __init__(self,name,nb_samples,
-        sds_yml_file=None,
-        sds_connection=None):
-        GenericSource.__init__(self,name)
-        self.sample_size = getSensorSampleSize(sds_yml_file)
-        self.addOutput("o",CType(SINT8),self.sample_size*nb_samples)
-        
-        self.addVariableArg(sds_connection)
-
-    @property
-    def typeName(self):
-        return ("SDSAsyncSensor")
+        if self._asynchronous:
+           return ("SDSAsyncSensor")
+        else:
+           return ("SDSSensor")
 
 class SDSRecorder(GenericSink):
     def __init__(self,name,nb_samples,

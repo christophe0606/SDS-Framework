@@ -9,61 +9,144 @@ digraph structs {
     fontname="times"
 
 
-accDisplay [label=<
-<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
-  <TR>
-    <TD ALIGN="CENTER" PORT="i">accDisplay<BR/>(AccelerometerDisplay)</TD>
-  </TR>
-</TABLE>>];
-
 accelerometer [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
   <TR>
-    <TD ALIGN="CENTER" PORT="i">accelerometer<BR/>(SDSSensor)</TD>
+    <TD ALIGN="CENTER" PORT="i">accelerometer<BR/>(VectorDisplay)</TD>
   </TR>
 </TABLE>>];
 
-accelerometerRec [label=<
+accelerometerSensor [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
   <TR>
-    <TD ALIGN="CENTER" PORT="i">accelerometerRec<BR/>(SDSRecorder)</TD>
+    <TD ALIGN="CENTER" PORT="i">accelerometerSensor<BR/>(SDSSensor)</TD>
   </TR>
 </TABLE>>];
 
-dup0 [shape=point,label=dup0]
 
-format [label=<
+application [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
   <TR>
-    <TD ALIGN="CENTER" PORT="i">format<BR/>(FormatAccelerometer)</TD>
+    <TD PORT="accI"><FONT POINT-SIZE="9.0">accI</FONT></TD>
+    <TD ALIGN="CENTER" ROWSPAN="3">application<BR/>(App)</TD>
+    <TD PORT="accO"><FONT POINT-SIZE="9.0">accO</FONT></TD>
+  </TR>
+<TR>
+<TD PORT="gyroI"><FONT POINT-SIZE="9.0">gyroI</FONT></TD>
+
+<TD PORT="gyroO"><FONT POINT-SIZE="9.0">gyroO</FONT></TD>
+</TR><TR>
+<TD PORT="tempI"><FONT POINT-SIZE="9.0">tempI</FONT></TD>
+
+<TD PORT="tempO"><FONT POINT-SIZE="9.0">tempO</FONT></TD>
+</TR>
+
+</TABLE>>];
+
+formatAcc [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">formatAcc<BR/>(FormatVector)</TD>
+  </TR>
+</TABLE>>];
+
+formatGyro [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">formatGyro<BR/>(FormatVector)</TD>
+  </TR>
+</TABLE>>];
+
+formatTemp [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">formatTemp<BR/>(FormatTemperature)</TD>
+  </TR>
+</TABLE>>];
+
+gyroscope [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">gyroscope<BR/>(VectorDisplay)</TD>
+  </TR>
+</TABLE>>];
+
+gyroscopeSensor [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">gyroscopeSensor<BR/>(SDSSensor)</TD>
+  </TR>
+</TABLE>>];
+
+temperature [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">temperature<BR/>(TemperatureDisplay)</TD>
+  </TR>
+</TABLE>>];
+
+temperatureSensor [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">temperatureSensor<BR/>(SDSSensor)</TD>
   </TR>
 </TABLE>>];
 
 
 
-format:i -> accDisplay:i [label="accelerometerSample_t(84)"
-,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >84</FONT>
+accelerometerSensor:i -> formatAcc:i [label="s8(10002)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >10002</FONT>
 </TD></TR></TABLE>>
-,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >84</FONT>
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >10002</FONT>
 </TD></TR></TABLE>>]
 
-accelerometer:i ->  
-dup0 [label="s8(504)"
-
-,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >504</FONT>
+gyroscopeSensor:i -> formatGyro:i [label="s8(10002)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >10002</FONT>
+</TD></TR></TABLE>>
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >10002</FONT>
 </TD></TR></TABLE>>]
 
- 
-dup0 -> format:i [label="s8(504)"
-,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >504</FONT>
+temperatureSensor:i -> formatTemp:i [label="s8(4)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >4</FONT>
 </TD></TR></TABLE>>
-]
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >4</FONT>
+</TD></TR></TABLE>>]
 
- 
-dup0 -> accelerometerRec:i [label="s8(504)"
-,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >504</FONT>
+formatAcc:i -> application:accI [label="vectorSample_t(1667)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1667</FONT>
 </TD></TR></TABLE>>
-]
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1667</FONT>
+</TD></TR></TABLE>>]
+
+formatGyro:i -> application:gyroI [label="vectorSample_t(1667)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1667</FONT>
+</TD></TR></TABLE>>
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1667</FONT>
+</TD></TR></TABLE>>]
+
+formatTemp:i -> application:tempI [label="f32(1)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1</FONT>
+</TD></TR></TABLE>>
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1</FONT>
+</TD></TR></TABLE>>]
+
+application:accO -> accelerometer:i [label="vectorSample_t(1667)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1667</FONT>
+</TD></TR></TABLE>>
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1667</FONT>
+</TD></TR></TABLE>>]
+
+application:gyroO -> gyroscope:i [label="vectorSample_t(1667)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1667</FONT>
+</TD></TR></TABLE>>
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1667</FONT>
+</TD></TR></TABLE>>]
+
+application:tempO -> temperature:i [label="f32(1)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1</FONT>
+</TD></TR></TABLE>>
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1</FONT>
+</TD></TR></TABLE>>]
 
 
 }

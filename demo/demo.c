@@ -35,19 +35,19 @@
 
 // Configuration
 #ifndef SDS_BUF_SIZE_ACCELEROMETER
-#define SDS_BUF_SIZE_ACCELEROMETER          8192U
+#define SDS_BUF_SIZE_ACCELEROMETER          16384U
 #endif
 #ifndef SDS_BUF_SIZE_GYROSCOPE
-#define SDS_BUF_SIZE_GYROSCOPE              8192U
+#define SDS_BUF_SIZE_GYROSCOPE              16384U
 #endif
 #ifndef SDS_BUF_SIZE_TEMPERATURE_SENSOR
 #define SDS_BUF_SIZE_TEMPERATURE_SENSOR     128U
 #endif
 #ifndef SDS_THRESHOLD_ACCELEROMETER
-#define SDS_THRESHOLD_ACCELEROMETER         504U
+#define SDS_THRESHOLD_ACCELEROMETER         10002U
 #endif
 #ifndef SDS_THRESHOLD_GYROSCOPE
-#define SDS_THRESHOLD_GYROSCOPE             2048U
+#define SDS_THRESHOLD_GYROSCOPE             10002U
 #endif
 #ifndef SDS_THRESHOLD_TEMPERATURE_SENSOR
 #define SDS_THRESHOLD_TEMPERATURE_SENSOR    4U
@@ -182,7 +182,7 @@ static __NO_RETURN void read_sensors (void *argument) {
           }
         }
       }
-#if 0
+
       if (sensorGetStatus(sensorId_gyroscope).active != 0U) {
         num = sizeof(sensorBuf) / sensorConfig_gyroscope->sample_size;
         num = sensorReadSamples(sensorId_gyroscope, num, sensorBuf, sizeof(sensorBuf));
@@ -192,12 +192,6 @@ static __NO_RETURN void read_sensors (void *argument) {
           if (num != buf_size) {
             printf("%s: SDS write failed\r\n", sensorConfig_gyroscope->name);
           }
-#ifdef RECORDER_USED
-          num = sdsRecWrite(recId_gyroscope, timestamp, sensorBuf, buf_size);
-          if (num != buf_size) {
-            printf("%s: Recorder write failed\r\n", sensorConfig_gyroscope->name);
-          }
-#endif
         }
       }
 
@@ -210,15 +204,9 @@ static __NO_RETURN void read_sensors (void *argument) {
           if (num != buf_size) {
             printf("%s: SDS write failed\r\n", sensorConfig_temperatureSensor->name);
           }
-#ifdef RECORDER_USED
-          num = sdsRecWrite(recId_temperatureSensor, timestamp, sensorBuf, buf_size);
-          if (num != buf_size) {
-            printf("%s: Recorder write failed\r\n", sensorConfig_temperatureSensor->name);
-          }
-#endif
         }
       }
-#endif
+
     } else {
       if (event_close_sent == 0U) {
         event_close_sent = 1U;
@@ -300,14 +288,14 @@ static void button_event (void) {
     printf("Accelerometer enabled\r\n");
 
     // Gyroscope enable
-    //sdsClear(sdsId_gyroscope);
-    //sensorEnable(sensorId_gyroscope);
-    //printf("Gyroscope enabled\r\n");
+    sdsClear(sdsId_gyroscope);
+    sensorEnable(sensorId_gyroscope);
+    printf("Gyroscope enabled\r\n");
 
     // Temperature sensor enable
-    //sdsClear(sdsId_temperatureSensor);
-    //sensorEnable(sensorId_temperatureSensor);
-    //printf("Temperature sensor enabled\r\n");
+    sdsClear(sdsId_temperatureSensor);
+    sensorEnable(sensorId_temperatureSensor);
+    printf("Temperature sensor enabled\r\n");
 
   } else {
     event_close_sent = 0U;
@@ -323,11 +311,11 @@ static void button_event (void) {
       printf("Accelerometer disabled\r\n");
 
       // Gyroscope disable
-      //sensorDisable(sensorId_gyroscope);
+      sensorDisable(sensorId_gyroscope);
       printf("Gyroscope disabled\r\n");
 
       // Temperature sensor disable
-      //sensorDisable(sensorId_temperatureSensor);
+      sensorDisable(sensorId_temperatureSensor);
       printf("Temperature sensor disabled\r\n");
     }
 
@@ -359,32 +347,64 @@ void __NO_RETURN demo(void) {
                                     sizeof(sdsBuf_accelerometer),
                                     0U, SDS_THRESHOLD_ACCELEROMETER);
                                     
-  /*sdsId_gyroscope         = sdsOpen(sdsBuf_gyroscope,
+  sdsId_gyroscope         = sdsOpen(sdsBuf_gyroscope,
                                     sizeof(sdsBuf_gyroscope),
                                     0U, SDS_THRESHOLD_GYROSCOPE);
 
   sdsId_temperatureSensor = sdsOpen(sdsBuf_temperatureSensor,
                                     sizeof(sdsBuf_temperatureSensor),
                                     0U, SDS_THRESHOLD_TEMPERATURE_SENSOR);
-*/
+
 
   // Register SDS events
   sdsRegisterEvents(sdsId_accelerometer,     sds_event_callback, SDS_EVENT_DATA_HIGH, NULL);
-  //sdsRegisterEvents(sdsId_gyroscope,         sds_event_callback, SDS_EVENT_DATA_HIGH, NULL);
-  //sdsRegisterEvents(sdsId_temperatureSensor, sds_event_callback, SDS_EVENT_DATA_HIGH, NULL);
+  sdsRegisterEvents(sdsId_gyroscope,         sds_event_callback, SDS_EVENT_DATA_HIGH, NULL);
+  sdsRegisterEvents(sdsId_temperatureSensor, sds_event_callback, SDS_EVENT_DATA_HIGH, NULL);
 
+  // Init accelerometer sensor - CG connection datastructure
   sensorConn_accelerometer.event = EVENT_DATA_ACCELEROMETER; 
   sensorConn_accelerometer.cancel_event = EVENT_STREAM_CANCEL; 
   sensorConn_accelerometer.timeout = osWaitForever;
   sensorConn_accelerometer.sdsId = sdsId_accelerometer;
 
+  // Init accelerometer recorder - CG connection datastructure
   recConn_accelerometer.sensorName="Accelerometer";
   recConn_accelerometer.recorderBuffer=recBuf_accelerometer;
   recConn_accelerometer.recorderBufferSize=REC_BUF_SIZE_ACCELEROMETER;
   recConn_accelerometer.recorderThreshold=REC_IO_THRESHOLD_ACCELEROMETER;
 
+  // Init gyroscope sensor - CG connection datastructure
+  sensorConn_gyroscope.event = EVENT_DATA_GYROSCOPE; 
+  sensorConn_gyroscope.cancel_event = EVENT_STREAM_CANCEL; 
+  sensorConn_gyroscope.timeout = osWaitForever;
+  sensorConn_gyroscope.sdsId = sdsId_gyroscope;
+
+  // Init accelerometer recorder - CG connection datastructure
+  recConn_gyroscope.sensorName="Gyroscope";
+  recConn_gyroscope.recorderBuffer=recBuf_gyroscope;
+  recConn_gyroscope.recorderBufferSize=REC_BUF_SIZE_GYROSCOPE;
+  recConn_gyroscope.recorderThreshold=REC_IO_THRESHOLD_GYROSCOPE;
+
+  // Init temperature sensor - CG connection datastructure
+  sensorConn_temperatureSensor.event = EVENT_DATA_TEMPERATURE_SENSOR; 
+  sensorConn_temperatureSensor.cancel_event = EVENT_STREAM_CANCEL; 
+  sensorConn_temperatureSensor.timeout = osWaitForever;
+  sensorConn_temperatureSensor.sdsId = sdsId_gyroscope;
+
+  // Init temperature recorder - CG connection datastructure
+  recConn_temperatureSensor.sensorName="Temperature";
+  recConn_temperatureSensor.recorderBuffer=recBuf_temperatureSensor;
+  recConn_temperatureSensor.recorderBufferSize=REC_BUF_SIZE_TEMPERATURE_SENSOR;
+  recConn_temperatureSensor.recorderThreshold=REC_IO_THRESHOLD_TEMPERATURE_SENSOR;
+
   demoContext.sensorConn_accelerometer = &sensorConn_accelerometer;
   demoContext.recConn_accelerometer = &recConn_accelerometer;
+
+  demoContext.sensorConn_gyroscope = &sensorConn_gyroscope;
+  demoContext.recConn_gyroscope = &recConn_gyroscope;
+
+  demoContext.sensorConn_temperatureSensor = &sensorConn_temperatureSensor;
+  demoContext.recConn_temperatureSensor = &recConn_temperatureSensor;
 
 #ifdef RECORDER_USED
   #ifdef RECORDER_USED
