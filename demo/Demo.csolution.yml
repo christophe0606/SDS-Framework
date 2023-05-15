@@ -20,6 +20,9 @@ solution:
       device: ARM::SSE-300-MPS3
       define:
         - RECORDER_ENABLED
+      misc:
+        - C:
+          - -DSDS_REC_MAX_RECORD_SIZE=16384
 
   projects:
     - project: ./Demo.cproject.yml

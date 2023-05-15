@@ -4,6 +4,7 @@
 #include "sds.h"
 #include "cg_status.h"
 
+#include <cstdio>
 
 template<typename OUT,int outputSize>
 class SDSSensor;
@@ -80,7 +81,7 @@ public:
     };
 
 protected:
-
+    bool p;
     sds_sensor_cg_connection_t *mSDS;
 };
 

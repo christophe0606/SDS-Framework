@@ -35,10 +35,10 @@
 
 // Configuration
 #ifndef SDS_BUF_SIZE_ACCELEROMETER
-#define SDS_BUF_SIZE_ACCELEROMETER          16384U
+#define SDS_BUF_SIZE_ACCELEROMETER          20000U
 #endif
 #ifndef SDS_BUF_SIZE_GYROSCOPE
-#define SDS_BUF_SIZE_GYROSCOPE              16384U
+#define SDS_BUF_SIZE_GYROSCOPE              20000U
 #endif
 #ifndef SDS_BUF_SIZE_TEMPERATURE_SENSOR
 #define SDS_BUF_SIZE_TEMPERATURE_SENSOR     128U
@@ -54,10 +54,10 @@
 #endif
 
 #ifndef REC_BUF_SIZE_ACCELEROMETER
-#define REC_BUF_SIZE_ACCELEROMETER          8192U
+#define REC_BUF_SIZE_ACCELEROMETER          16384U
 #endif
 #ifndef REC_BUF_SIZE_GYROSCOPE
-#define REC_BUF_SIZE_GYROSCOPE              8192U
+#define REC_BUF_SIZE_GYROSCOPE              16384U
 #endif
 #ifndef REC_BUF_SIZE_TEMPERATURE_SENSOR
 #define REC_BUF_SIZE_TEMPERATURE_SENSOR     256U
@@ -326,11 +326,9 @@ static void button_event (void) {
 // Sensor Demo
 void __NO_RETURN demo(void) {
   uint32_t  n, num, flags;
-  uint32_t  buf[2];
-  uint16_t *data_u16 = (uint16_t *)buf;
-  float    *data_f   = (float *)buf;
 
   thrId_demo = osThreadGetId();
+
 
   // Get sensor identifier
   sensorId_accelerometer     = sensorGetId("Accelerometer");
@@ -389,7 +387,7 @@ void __NO_RETURN demo(void) {
   sensorConn_temperatureSensor.event = EVENT_DATA_TEMPERATURE_SENSOR; 
   sensorConn_temperatureSensor.cancel_event = EVENT_STREAM_CANCEL; 
   sensorConn_temperatureSensor.timeout = osWaitForever;
-  sensorConn_temperatureSensor.sdsId = sdsId_gyroscope;
+  sensorConn_temperatureSensor.sdsId = sdsId_temperatureSensor;
 
   // Init temperature recorder - CG connection datastructure
   recConn_temperatureSensor.sensorName="Temperature";

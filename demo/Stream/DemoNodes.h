@@ -127,7 +127,7 @@ public:
     int run() final{
         int8_t *a=this->getReadBuffer();
         float *b=this->getWriteBuffer();
-        uint32_t  buf[1];
+        uint32_t  buf[2];
         float *temp = (float *)buf;
 
         memcpy(buf,a,4);

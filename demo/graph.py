@@ -8,7 +8,7 @@ from Stream.nodes import *
 from Stream.sds_nodes import SDSSensor,SDSRecorder
 
 ASYNCHRONOUS = False 
-RECORDER = False
+RECORDER = True
 
 ACC_BLOCK = 1667
 GYRO_BLOCK = 1667

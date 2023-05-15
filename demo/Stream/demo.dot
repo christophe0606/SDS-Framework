@@ -16,6 +16,13 @@ accelerometer [label=<
   </TR>
 </TABLE>>];
 
+accelerometerRecorder [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">accelerometerRecorder<BR/>(SDSRecorder)</TD>
+  </TR>
+</TABLE>>];
+
 accelerometerSensor [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
   <TR>
@@ -42,6 +49,12 @@ application [label=<
 </TR>
 
 </TABLE>>];
+
+dup0 [shape=point,label=dup0]
+
+dup1 [shape=point,label=dup1]
+
+dup2 [shape=point,label=dup2]
 
 formatAcc [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
@@ -71,6 +84,13 @@ gyroscope [label=<
   </TR>
 </TABLE>>];
 
+gyroscopeRecorder [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">gyroscopeRecorder<BR/>(SDSRecorder)</TD>
+  </TR>
+</TABLE>>];
+
 gyroscopeSensor [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
   <TR>
@@ -85,6 +105,13 @@ temperature [label=<
   </TR>
 </TABLE>>];
 
+temperatureRecorder [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">temperatureRecorder<BR/>(SDSRecorder)</TD>
+  </TR>
+</TABLE>>];
+
 temperatureSensor [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
   <TR>
@@ -93,24 +120,6 @@ temperatureSensor [label=<
 </TABLE>>];
 
 
-
-accelerometerSensor:i -> formatAcc:i [label="s8(10002)"
-,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >10002</FONT>
-</TD></TR></TABLE>>
-,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >10002</FONT>
-</TD></TR></TABLE>>]
-
-gyroscopeSensor:i -> formatGyro:i [label="s8(10002)"
-,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >10002</FONT>
-</TD></TR></TABLE>>
-,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >10002</FONT>
-</TD></TR></TABLE>>]
-
-temperatureSensor:i -> formatTemp:i [label="s8(4)"
-,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >4</FONT>
-</TD></TR></TABLE>>
-,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >4</FONT>
-</TD></TR></TABLE>>]
 
 formatAcc:i -> application:accI [label="vectorSample_t(1667)"
 ,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1667</FONT>
@@ -147,6 +156,60 @@ application:tempO -> temperature:i [label="f32(1)"
 </TD></TR></TABLE>>
 ,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1</FONT>
 </TD></TR></TABLE>>]
+
+accelerometerSensor:i ->  
+dup0 [label="s8(10002)"
+
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >10002</FONT>
+</TD></TR></TABLE>>]
+
+ 
+dup0 -> formatAcc:i [label="s8(10002)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >10002</FONT>
+</TD></TR></TABLE>>
+]
+
+ 
+dup0 -> accelerometerRecorder:i [label="s8(10002)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >10002</FONT>
+</TD></TR></TABLE>>
+]
+
+gyroscopeSensor:i ->  
+dup1 [label="s8(10002)"
+
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >10002</FONT>
+</TD></TR></TABLE>>]
+
+ 
+dup1 -> formatGyro:i [label="s8(10002)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >10002</FONT>
+</TD></TR></TABLE>>
+]
+
+ 
+dup1 -> gyroscopeRecorder:i [label="s8(10002)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >10002</FONT>
+</TD></TR></TABLE>>
+]
+
+temperatureSensor:i ->  
+dup2 [label="s8(4)"
+
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >4</FONT>
+</TD></TR></TABLE>>]
+
+ 
+dup2 -> formatTemp:i [label="s8(4)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >4</FONT>
+</TD></TR></TABLE>>
+]
+
+ 
+dup2 -> temperatureRecorder:i [label="s8(4)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >4</FONT>
+</TD></TR></TABLE>>
+]
 
 
 }
