@@ -306,4 +306,106 @@ private:
     FIFOBase<IN2> &mDst2;
     FIFOBase<IN3> &mDst3;
 };
+
+template<typename IN1, int inputSize1,
+         typename IN2, int inputSize2,
+         typename OUT1, int outputSize1,
+         typename OUT2, int outputSize2>
+class SmallApp;
+
+template<typename IN1, int inputSize1,
+         typename IN2, int inputSize2>
+class SmallApp<IN1,inputSize1,
+               IN2,inputSize2,
+               IN1,inputSize1,
+               IN2,inputSize2>:public NodeBase
+{
+public:
+     SmallApp(FIFOBase<IN1> &src1,
+              FIFOBase<IN2> &src2,
+              FIFOBase<IN1> &dst1,
+              FIFOBase<IN2> &dst2):
+     mSrc1(src1),
+     mSrc2(src2),
+     mDst1(dst1),
+     mDst2(dst2){
+        canRun1=true;
+        canRun2=true;
+     };
+
+public:
+    int prepareForRunning() final
+    {
+        if ((this->willUnderflow1()) || (this->willOverflow1()))
+        {
+            canRun1 = false;
+        }
+        else
+        {
+            canRun1=true;
+        }
+
+        if ((this->willUnderflow2()) || (this->willOverflow2()))
+        {
+            canRun2 = false;
+        }
+        else
+        {
+            canRun2=true;
+        }
+
+       
+
+        if ((!canRun1) && (!canRun2) )
+        {
+            return(CG_SKIP_EXECUTION_ID_CODE);
+        }
+        return(CG_SUCCESS);
+    };
+
+    int run() final
+    {
+        if (canRun1)
+        {
+           IN1 *in1=this->getReadBuffer1();
+           IN1 *out1=this->getWriteBuffer1();
+
+           memcpy(out1,in1,sizeof(IN1)*inputSize1);
+        }
+
+        if (canRun2)
+        {
+            IN2 *in2=this->getReadBuffer2();
+            IN2 *out2=this->getWriteBuffer2();
+        
+            memcpy(out2,in2,sizeof(IN2)*inputSize2);
+        }
+
+
+        return(CG_SUCCESS);
+    };
+
+protected:
+     IN1 * getWriteBuffer1(int nb = inputSize1){return mDst1.getWriteBuffer(nb);};
+     IN1 * getReadBuffer1(int nb = inputSize1){return mSrc1.getReadBuffer(nb);};
+
+     bool willOverflow1(int nb = inputSize1){return mDst1.willOverflowWith(nb);};
+     bool willUnderflow1(int nb = inputSize1){return mSrc1.willUnderflowWith(nb);};
+
+     IN2 * getWriteBuffer2(int nb = inputSize2){return mDst2.getWriteBuffer(nb);};
+     IN2 * getReadBuffer2(int nb = inputSize2){return mSrc2.getReadBuffer(nb);};
+
+     bool willOverflow2(int nb = inputSize2){return mDst2.willOverflowWith(nb);};
+     bool willUnderflow2(int nb = inputSize2){return mSrc2.willUnderflowWith(nb);};
+
+     bool canRun1;
+     bool canRun2;
+
+private:
+    FIFOBase<IN1> &mSrc1;
+    FIFOBase<IN2> &mSrc2;
+
+    FIFOBase<IN1> &mDst1;
+    FIFOBase<IN2> &mDst2;
+};
 #endif

@@ -16,10 +16,17 @@ accelerometer [label=<
   </TR>
 </TABLE>>];
 
+accelerometerRecorder [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">accelerometerRecorder<BR/>(SDSRecorder)</TD>
+  </TR>
+</TABLE>>];
+
 accelerometerSensor [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
   <TR>
-    <TD ALIGN="CENTER" PORT="i">accelerometerSensor<BR/>(SDSAsyncSensor)</TD>
+    <TD ALIGN="CENTER" PORT="i">accelerometerSensor<BR/>(SDSSensor)</TD>
   </TR>
 </TABLE>>];
 
@@ -28,20 +35,20 @@ application [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
   <TR>
     <TD PORT="accI"><FONT POINT-SIZE="9.0">accI</FONT></TD>
-    <TD ALIGN="CENTER" ROWSPAN="3">application<BR/>(App)</TD>
+    <TD ALIGN="CENTER" ROWSPAN="2">application<BR/>(SmallApp)</TD>
     <TD PORT="accO"><FONT POINT-SIZE="9.0">accO</FONT></TD>
   </TR>
 <TR>
 <TD PORT="gyroI"><FONT POINT-SIZE="9.0">gyroI</FONT></TD>
 
 <TD PORT="gyroO"><FONT POINT-SIZE="9.0">gyroO</FONT></TD>
-</TR><TR>
-<TD PORT="tempI"><FONT POINT-SIZE="9.0">tempI</FONT></TD>
-
-<TD PORT="tempO"><FONT POINT-SIZE="9.0">tempO</FONT></TD>
 </TR>
 
 </TABLE>>];
+
+dup0 [shape=point,label=dup0]
+
+dup1 [shape=point,label=dup1]
 
 formatAcc [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
@@ -57,13 +64,6 @@ formatGyro [label=<
   </TR>
 </TABLE>>];
 
-formatTemp [label=<
-<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
-  <TR>
-    <TD ALIGN="CENTER" PORT="i">formatTemp<BR/>(FormatTemperature)</TD>
-  </TR>
-</TABLE>>];
-
 gyroscope [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
   <TR>
@@ -71,46 +71,21 @@ gyroscope [label=<
   </TR>
 </TABLE>>];
 
+gyroscopeRecorder [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+  <TR>
+    <TD ALIGN="CENTER" PORT="i">gyroscopeRecorder<BR/>(SDSRecorder)</TD>
+  </TR>
+</TABLE>>];
+
 gyroscopeSensor [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
   <TR>
-    <TD ALIGN="CENTER" PORT="i">gyroscopeSensor<BR/>(SDSAsyncSensor)</TD>
-  </TR>
-</TABLE>>];
-
-temperature [label=<
-<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
-  <TR>
-    <TD ALIGN="CENTER" PORT="i">temperature<BR/>(TemperatureDisplay)</TD>
-  </TR>
-</TABLE>>];
-
-temperatureSensor [label=<
-<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
-  <TR>
-    <TD ALIGN="CENTER" PORT="i">temperatureSensor<BR/>(SDSAsyncSensor)</TD>
+    <TD ALIGN="CENTER" PORT="i">gyroscopeSensor<BR/>(SDSSensor)</TD>
   </TR>
 </TABLE>>];
 
 
-
-accelerometerSensor:i -> formatAcc:i [label="s8(600)"
-,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >600</FONT>
-</TD></TR></TABLE>>
-,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >600</FONT>
-</TD></TR></TABLE>>]
-
-gyroscopeSensor:i -> formatGyro:i [label="s8(600)"
-,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >600</FONT>
-</TD></TR></TABLE>>
-,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >600</FONT>
-</TD></TR></TABLE>>]
-
-temperatureSensor:i -> formatTemp:i [label="s8(4)"
-,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >4</FONT>
-</TD></TR></TABLE>>
-,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >4</FONT>
-</TD></TR></TABLE>>]
 
 formatAcc:i -> application:accI [label="vectorSample_t(100)"
 ,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >100</FONT>
@@ -122,12 +97,6 @@ formatGyro:i -> application:gyroI [label="vectorSample_t(100)"
 ,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >100</FONT>
 </TD></TR></TABLE>>
 ,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >100</FONT>
-</TD></TR></TABLE>>]
-
-formatTemp:i -> application:tempI [label="f32(1)"
-,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1</FONT>
-</TD></TR></TABLE>>
-,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1</FONT>
 </TD></TR></TABLE>>]
 
 application:accO -> accelerometer:i [label="vectorSample_t(100)"
@@ -142,11 +111,41 @@ application:gyroO -> gyroscope:i [label="vectorSample_t(100)"
 ,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >100</FONT>
 </TD></TR></TABLE>>]
 
-application:tempO -> temperature:i [label="f32(1)"
-,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1</FONT>
-</TD></TR></TABLE>>
-,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >1</FONT>
+accelerometerSensor:i ->  
+dup0 [label="s8(600)"
+
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >600</FONT>
 </TD></TR></TABLE>>]
+
+ 
+dup0 -> formatAcc:i [label="s8(600)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >600</FONT>
+</TD></TR></TABLE>>
+]
+
+ 
+dup0 -> accelerometerRecorder:i [label="s8(600)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >60</FONT>
+</TD></TR></TABLE>>
+]
+
+gyroscopeSensor:i ->  
+dup1 [label="s8(600)"
+
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >600</FONT>
+</TD></TR></TABLE>>]
+
+ 
+dup1 -> formatGyro:i [label="s8(600)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >600</FONT>
+</TD></TR></TABLE>>
+]
+
+ 
+dup1 -> gyroscopeRecorder:i [label="s8(600)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >60</FONT>
+</TD></TR></TABLE>>
+]
 
 
 }

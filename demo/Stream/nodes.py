@@ -17,6 +17,20 @@ class App(GenericNode):
     def typeName(self):
         return "App"
 
+class SmallApp(GenericNode):
+    def __init__(self,name,accLength,gyroLength):
+        GenericNode.__init__(self,name)
+        vectorType=CStructType("vectorSample_t",6)
+        self.addInput("accI",vectorType,accLength)
+        self.addInput("gyroI",vectorType,gyroLength)
+
+        self.addOutput("accO",vectorType,accLength)
+        self.addOutput("gyroO",vectorType,gyroLength)
+
+    @property
+    def typeName(self):
+        return "SmallApp"
+
 class VectorDisplay(GenericSink):
     def __init__(self,name,inLength):
         GenericSink.__init__(self,name)

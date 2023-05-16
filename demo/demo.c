@@ -31,14 +31,18 @@
 #include "demo_scheduler.h"
 #include "cg_status.h"
 
-#include "recorder_config.h"
+#include "demo_config.h"
 
 #ifdef ASYNCHRONOUS
 // Configuration for asynchronous mode
 #include "configs/asynchronous_with_temp.h"
 #else
 // Configuration for synchronous mode
+#ifdef TEMPSENSOR
 #include "configs/synchronous_with_temp.h"
+#else 
+#include "configs/synchronous_with_no_temp.h"
+#endif
 #endif
 
 #ifndef SENSOR_POLLING_INTERVAL

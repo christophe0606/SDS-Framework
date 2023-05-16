@@ -78,9 +78,9 @@ CG_AFTER_INCLUDES
 Description of the scheduling. 
 
 */
-static unsigned int schedule[10]=
+static unsigned int schedule[29]=
 { 
-1,3,7,4,9,5,2,0,6,8,
+2,4,1,1,1,1,1,1,1,1,1,1,6,10,5,9,9,9,9,9,9,9,9,9,9,7,3,0,8,
 };
 
 CG_BEFORE_FIFO_BUFFERS
@@ -89,51 +89,56 @@ CG_BEFORE_FIFO_BUFFERS
 FIFO buffers
 
 ************/
-#define FIFOSIZE0 600
-#define FIFOSIZE1 600
-#define FIFOSIZE2 4
+#define FIFOSIZE0 100
+#define FIFOSIZE1 100
+#define FIFOSIZE2 100
 #define FIFOSIZE3 100
-#define FIFOSIZE4 100
-#define FIFOSIZE5 1
-#define FIFOSIZE6 100
-#define FIFOSIZE7 100
-#define FIFOSIZE8 1
+#define FIFOSIZE4 600
+#define FIFOSIZE5 600
+#define FIFOSIZE6 600
+#define FIFOSIZE7 600
+#define FIFOSIZE8 600
+#define FIFOSIZE9 600
 
-#define BUFFERSIZE1 600
+#define BUFFERSIZE1 100
 CG_BEFORE_BUFFER
-int8_t demo_buf1[BUFFERSIZE1]={0};
+vectorSample_t demo_buf1[BUFFERSIZE1]={0};
 
-#define BUFFERSIZE2 600
+#define BUFFERSIZE2 100
 CG_BEFORE_BUFFER
-int8_t demo_buf2[BUFFERSIZE2]={0};
+vectorSample_t demo_buf2[BUFFERSIZE2]={0};
 
-#define BUFFERSIZE3 4
+#define BUFFERSIZE3 100
 CG_BEFORE_BUFFER
-int8_t demo_buf3[BUFFERSIZE3]={0};
+vectorSample_t demo_buf3[BUFFERSIZE3]={0};
 
 #define BUFFERSIZE4 100
 CG_BEFORE_BUFFER
 vectorSample_t demo_buf4[BUFFERSIZE4]={0};
 
-#define BUFFERSIZE5 100
+#define BUFFERSIZE5 600
 CG_BEFORE_BUFFER
-vectorSample_t demo_buf5[BUFFERSIZE5]={0};
+int8_t demo_buf5[BUFFERSIZE5]={0};
 
-#define BUFFERSIZE6 1
+#define BUFFERSIZE6 600
 CG_BEFORE_BUFFER
-float demo_buf6[BUFFERSIZE6]={0};
+int8_t demo_buf6[BUFFERSIZE6]={0};
 
-#define BUFFERSIZE7 100
+#define BUFFERSIZE7 600
 CG_BEFORE_BUFFER
-vectorSample_t demo_buf7[BUFFERSIZE7]={0};
+int8_t demo_buf7[BUFFERSIZE7]={0};
 
-#define BUFFERSIZE8 100
+#define BUFFERSIZE8 600
 CG_BEFORE_BUFFER
-vectorSample_t demo_buf8[BUFFERSIZE8]={0};
+int8_t demo_buf8[BUFFERSIZE8]={0};
 
-#define BUFFERSIZE9 1
+#define BUFFERSIZE9 600
 CG_BEFORE_BUFFER
-float demo_buf9[BUFFERSIZE9]={0};
+int8_t demo_buf9[BUFFERSIZE9]={0};
+
+#define BUFFERSIZE10 600
+CG_BEFORE_BUFFER
+int8_t demo_buf10[BUFFERSIZE10]={0};
 
 
 CG_BEFORE_SCHEDULER_FUNCTION
@@ -146,30 +151,32 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
     /*
     Create FIFOs objects
     */
-    FIFO<int8_t,FIFOSIZE0,0,1> fifo0(demo_buf1);
-    FIFO<int8_t,FIFOSIZE1,0,1> fifo1(demo_buf2);
-    FIFO<int8_t,FIFOSIZE2,0,1> fifo2(demo_buf3);
-    FIFO<vectorSample_t,FIFOSIZE3,0,1> fifo3(demo_buf4);
-    FIFO<vectorSample_t,FIFOSIZE4,0,1> fifo4(demo_buf5);
-    FIFO<float,FIFOSIZE5,0,1> fifo5(demo_buf6);
-    FIFO<vectorSample_t,FIFOSIZE6,0,1> fifo6(demo_buf7);
-    FIFO<vectorSample_t,FIFOSIZE7,0,1> fifo7(demo_buf8);
-    FIFO<float,FIFOSIZE8,0,1> fifo8(demo_buf9);
+    FIFO<vectorSample_t,FIFOSIZE0,1,0> fifo0(demo_buf1);
+    FIFO<vectorSample_t,FIFOSIZE1,1,0> fifo1(demo_buf2);
+    FIFO<vectorSample_t,FIFOSIZE2,1,0> fifo2(demo_buf3);
+    FIFO<vectorSample_t,FIFOSIZE3,1,0> fifo3(demo_buf4);
+    FIFO<int8_t,FIFOSIZE4,1,0> fifo4(demo_buf5);
+    FIFO<int8_t,FIFOSIZE5,1,0> fifo5(demo_buf6);
+    FIFO<int8_t,FIFOSIZE6,0,0> fifo6(demo_buf7);
+    FIFO<int8_t,FIFOSIZE7,1,0> fifo7(demo_buf8);
+    FIFO<int8_t,FIFOSIZE8,1,0> fifo8(demo_buf9);
+    FIFO<int8_t,FIFOSIZE9,0,0> fifo9(demo_buf10);
 
     CG_BEFORE_NODE_INIT;
     /* 
     Create node objects
     */
-    VectorDisplay<vectorSample_t,100> accelerometer(fifo6,"accelerometer");
-    SDSAsyncSensor<int8_t,600> accelerometerSensor(fifo0,demoContext->sensorConn_accelerometer);
-    App<vectorSample_t,100,vectorSample_t,100,float,1,vectorSample_t,100,vectorSample_t,100,float,1> application(fifo3,fifo4,fifo5,fifo6,fifo7,fifo8);
-    FormatVector<int8_t,600,vectorSample_t,100> formatAcc(fifo0,fifo3);
-    FormatVector<int8_t,600,vectorSample_t,100> formatGyro(fifo1,fifo4);
-    FormatTemperature<int8_t,4,float,1> formatTemp(fifo2,fifo5);
-    VectorDisplay<vectorSample_t,100> gyroscope(fifo7,"gyroscope");
-    SDSAsyncSensor<int8_t,600> gyroscopeSensor(fifo1,demoContext->sensorConn_gyroscope);
-    TemperatureDisplay<float,1> temperature(fifo8);
-    SDSAsyncSensor<int8_t,4> temperatureSensor(fifo2,demoContext->sensorConn_temperatureSensor);
+    VectorDisplay<vectorSample_t,100> accelerometer(fifo2,"accelerometer");
+    SDSRecorder<int8_t,60> accelerometerRecorder(fifo6,demoContext->recConn_accelerometer);
+    SDSSensor<int8_t,600> accelerometerSensor(fifo4,demoContext->sensorConn_accelerometer);
+    SmallApp<vectorSample_t,100,vectorSample_t,100,vectorSample_t,100,vectorSample_t,100> application(fifo0,fifo1,fifo2,fifo3);
+    Duplicate2<int8_t,600,int8_t,600,int8_t,600> dup0(fifo4,fifo5,fifo6);
+    Duplicate2<int8_t,600,int8_t,600,int8_t,600> dup1(fifo7,fifo8,fifo9);
+    FormatVector<int8_t,600,vectorSample_t,100> formatAcc(fifo5,fifo0);
+    FormatVector<int8_t,600,vectorSample_t,100> formatGyro(fifo8,fifo1);
+    VectorDisplay<vectorSample_t,100> gyroscope(fifo3,"gyroscope");
+    SDSRecorder<int8_t,60> gyroscopeRecorder(fifo9,demoContext->recConn_gyroscope);
+    SDSSensor<int8_t,600> gyroscopeSensor(fifo7,demoContext->sensorConn_gyroscope);
 
     /* Run several schedule iterations */
     CG_BEFORE_SCHEDULE;
@@ -177,84 +184,9 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
     {
         /* Run a schedule iteration */
         CG_BEFORE_ITERATION;
-        for(unsigned long id=0 ; id < 10; id++)
+        for(unsigned long id=0 ; id < 29; id++)
         {
             CG_BEFORE_NODE_EXECUTION;
-
-            cgStaticError = 0;
-            switch(schedule[id])
-            {
-                case 0:
-                {
-                    cgStaticError = accelerometer.prepareForRunning();
-                }
-                break;
-
-                case 1:
-                {
-                    cgStaticError = accelerometerSensor.prepareForRunning();
-                }
-                break;
-
-                case 2:
-                {
-                    cgStaticError = application.prepareForRunning();
-                }
-                break;
-
-                case 3:
-                {
-                    cgStaticError = formatAcc.prepareForRunning();
-                }
-                break;
-
-                case 4:
-                {
-                    cgStaticError = formatGyro.prepareForRunning();
-                }
-                break;
-
-                case 5:
-                {
-                    cgStaticError = formatTemp.prepareForRunning();
-                }
-                break;
-
-                case 6:
-                {
-                    cgStaticError = gyroscope.prepareForRunning();
-                }
-                break;
-
-                case 7:
-                {
-                    cgStaticError = gyroscopeSensor.prepareForRunning();
-                }
-                break;
-
-                case 8:
-                {
-                    cgStaticError = temperature.prepareForRunning();
-                }
-                break;
-
-                case 9:
-                {
-                    cgStaticError = temperatureSensor.prepareForRunning();
-                }
-                break;
-
-                default:
-                break;
-            }
-
-            if (cgStaticError == CG_SKIP_EXECUTION_ID_CODE)
-            { 
-              cgStaticError = 0;
-              continue;
-            }
-
-            CHECKERROR;
 
             switch(schedule[id])
             {
@@ -266,55 +198,61 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
 
                 case 1:
                 {
-                   cgStaticError = accelerometerSensor.run();
+                   cgStaticError = accelerometerRecorder.run();
                 }
                 break;
 
                 case 2:
                 {
-                   cgStaticError = application.run();
+                   cgStaticError = accelerometerSensor.run();
                 }
                 break;
 
                 case 3:
                 {
-                   cgStaticError = formatAcc.run();
+                   cgStaticError = application.run();
                 }
                 break;
 
                 case 4:
                 {
-                   cgStaticError = formatGyro.run();
+                   cgStaticError = dup0.run();
                 }
                 break;
 
                 case 5:
                 {
-                   cgStaticError = formatTemp.run();
+                   cgStaticError = dup1.run();
                 }
                 break;
 
                 case 6:
                 {
-                   cgStaticError = gyroscope.run();
+                   cgStaticError = formatAcc.run();
                 }
                 break;
 
                 case 7:
                 {
-                   cgStaticError = gyroscopeSensor.run();
+                   cgStaticError = formatGyro.run();
                 }
                 break;
 
                 case 8:
                 {
-                   cgStaticError = temperature.run();
+                   cgStaticError = gyroscope.run();
                 }
                 break;
 
                 case 9:
                 {
-                   cgStaticError = temperatureSensor.run();
+                   cgStaticError = gyroscopeRecorder.run();
+                }
+                break;
+
+                case 10:
+                {
+                   cgStaticError = gyroscopeSensor.run();
                 }
                 break;
 
