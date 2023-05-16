@@ -208,4 +208,4 @@ allConfigs = [
 
 gen_graph(is_asynchronous=False,
           has_recorder=True,
-          has_temp=False)
+          has_temp=True)

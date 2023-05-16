@@ -95,7 +95,7 @@ def closeFile(file_name):
         sys.exit(1)
 
 # Create new figure and plot content
-def plotData(all_data, data_desc, freq, title, view3D):
+def plotData(all_data, data_desc, freq, title, view3D,start_time_limit,stop_time_limit):
     dim = {}
     desc_n = 0
     desc_n_max = len(data_desc)
@@ -149,6 +149,13 @@ def plotData(all_data, data_desc, freq, title, view3D):
         # Increment description number
         desc_n += 1
 
+    if start_time_limit or stop_time_limit:
+           left,right = plt.xlim() 
+           if start_time_limit:
+              left = start_time_limit
+           if stop_time_limit:
+              right = stop_time_limit
+           plt.xlim(left,right)
     plt.title(title)
     plt.xlabel("seconds")
     plt.ylabel(unit)
@@ -163,6 +170,7 @@ def plotData(all_data, data_desc, freq, title, view3D):
         ax3d.set_xlabel(f"{data_desc[0]['value']} [{data_desc[0]['unit']}]")
         ax3d.set_ylabel(f"{data_desc[1]['value']} [{data_desc[1]['unit']}]")
         ax3d.set_zlabel(f"{data_desc[2]['value']} [{data_desc[2]['unit']}]")
+
 
 # Main function
 def main():
@@ -179,6 +187,12 @@ def main():
     optional = parser.add_argument_group("optional")
     optional.add_argument("--3D", dest="view3D",
                             help="Plot 3D view in addition to normal 2D", action="store_true")
+
+    optional.add_argument("-ts", dest="start_time_limit",type = float,
+                            help="Limit plot to given start time limit")
+
+    optional.add_argument("-te", dest="stop_time_limit",type = float,
+                            help="Limit plot to given stop time limit")
 
     args = parser.parse_args()
 
@@ -206,7 +220,7 @@ def main():
         Record.flush()
 
         # Plot data from .sds file/files
-        plotData(data, data_desc, data_freq, data_name, args.view3D)
+        plotData(data, data_desc, data_freq, data_name, args.view3D,args.start_time_limit,args.stop_time_limit)
 
     # Show plotted figures
     plt.grid(linestyle=":")

@@ -4,6 +4,7 @@
     #define RECORDER_USED
 
     
-    
+    #define TEMPSENSOR
+
     #endif
     
