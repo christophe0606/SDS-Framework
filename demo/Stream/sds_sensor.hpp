@@ -4,8 +4,6 @@
 #include "sds.h"
 #include "cg_status.h"
 
-#include <cstdio>
-
 template<typename OUT,int outputSize>
 class SDSSensor;
 
@@ -29,7 +27,7 @@ public:
            return(CG_BUFFER_OVERFLOW); // Skip execution
         }
 
-        return(0);
+        return(CG_SUCCESS);
     };
 
     int run() final{
