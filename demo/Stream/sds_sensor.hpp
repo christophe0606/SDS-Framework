@@ -8,13 +8,13 @@ template<typename OUT,int outputSize>
 class SDSSensor;
 
 template<int outputSize>
-class SDSSensor<int8_t,outputSize>: 
-GenericSource<int8_t,outputSize>
+class SDSSensor<uint8_t,outputSize>: 
+GenericSource<uint8_t,outputSize>
 {
 public:
-    SDSSensor(FIFOBase<int8_t> &dst,
+    SDSSensor(FIFOBase<uint8_t> &dst,
            sds_sensor_cg_connection_t *sdsConnection):
-    GenericSource<int8_t,outputSize>(dst),
+    GenericSource<uint8_t,outputSize>(dst),
     mSDS(sdsConnection){
     };
 
@@ -31,7 +31,7 @@ public:
     };
 
     int run() final{
-        int8_t *b=this->getWriteBuffer();
+        uint8_t *b=this->getWriteBuffer();
 
         uint32_t remaining = outputSize;
 
@@ -83,15 +83,126 @@ protected:
     sds_sensor_cg_connection_t *mSDS;
 };
 
+template<typename OUT1,int outputSize1,
+         typename OUT2,int outputSize2>
+class SDSTimedSensor;
+
+template<int outputSize1,
+         int outputSize2>
+class SDSTimedSensor<uint8_t,outputSize1,
+                     uint32_t,outputSize2>:public NodeBase
+{
+public:
+    SDSTimedSensor(FIFOBase<uint8_t> &dst1,
+                   FIFOBase<uint32_t> &dst2,
+           sds_timed_sensor_cg_connection_t *sdsConnection):
+    mDst1(dst1),
+    mDst2(dst2),
+    mSDS(sdsConnection){
+    };
+
+    /* Should not be used in async mode. Instead use the
+       SDSAsyncSensor */
+    int prepareForRunning() final
+    {
+        if (this->willOverflow1())
+        {
+           return(CG_BUFFER_OVERFLOW); // Skip execution
+        }
+
+        if (this->willOverflow2())
+        {
+           return(CG_BUFFER_OVERFLOW); // Skip execution
+        }
+
+        return(CG_SUCCESS);
+    };
+
+    int run() final{
+        uint8_t *b=this->getWriteBuffer1();
+        uint32_t *t=this->getWriteBuffer2();
+
+        uint32_t remaining = outputSize1;
+        uint32_t remainingTimestamp = outputSize2;
+
+        while((remaining>0) && (remainingTimestamp>0))
+        {
+            if ((sdsGetCount(mSDS->sdsId)==0) && 
+               (sdsGetCount(mSDS->sdsTimestampsId)==0))
+            {
+               uint32_t flags = osThreadFlagsWait(mSDS->cancel_event | mSDS->event, osFlagsWaitAny,mSDS->timeout);
+               if ((flags & osFlagsError) != 0U)
+               {
+                  return(CG_BUFFER_UNDERFLOW);
+               }
+               if (flags & mSDS->cancel_event)
+               {
+                  return(CG_STOP_SCHEDULER);
+               }
+            }
+            else
+            {
+                uint32_t flags = osThreadFlagsWait(mSDS->cancel_event, osFlagsWaitAny,0);
+                if ((flags & osFlagsError) == 0U)
+                {
+                    if (flags & mSDS->cancel_event)
+                    {
+                       return(CG_STOP_SCHEDULER);
+                    }
+                }
+                else 
+                {
+                    // osFlagsErrorResource means no cancel event
+                    // has been received
+                    if ((flags & osFlagsErrorResource) == 0U)
+                    {
+                        return(CG_OS_ERROR);
+                    }
+                }
+            }
+            
+            if (sdsGetCount(mSDS->sdsId)>0)
+            {
+              uint32_t num = sdsRead(mSDS->sdsId, b, remaining);
+              b += num;
+              remaining -= num;
+            }
+
+            if (sdsGetCount(mSDS->sdsTimestampsId)>0)
+            {
+              uint32_t num = sdsRead(mSDS->sdsTimestampsId, t, remainingTimestamp);
+              t += num;
+              remainingTimestamp -= num;
+            }
+            
+        }
+        return(CG_SUCCESS);
+    };
+
+protected:
+    bool p;
+    sds_timed_sensor_cg_connection_t *mSDS;
+
+    uint8_t * getWriteBuffer1(int nb=outputSize1){return mDst1.getWriteBuffer(nb);};
+    bool willOverflow1(int nb = outputSize1){return mDst1.willOverflowWith(nb);};
+
+    uint32_t * getWriteBuffer2(int nb=outputSize2){return mDst2.getWriteBuffer(nb);};
+    bool willOverflow2(int nb = outputSize2){return mDst2.willOverflowWith(nb);};
+
+private:
+    FIFOBase<uint8_t> &mDst1;
+    FIFOBase<uint32_t> &mDst2;
+};
+
 template<typename OUT,int outputSize>
 class SDSAsyncSensor;
 
 template<int outputSize>
-class SDSAsyncSensor<int8_t,outputSize>: 
+class SDSAsyncSensor<uint8_t,outputSize>: 
 public NodeBase
 {
 public:
-    SDSAsyncSensor(FIFOBase<int8_t> &dst,
+    SDSAsyncSensor(FIFOBase<uint8_t> &dst,
            sds_sensor_cg_connection_t *sdsConnection):
     mDst(dst),
     mSDS(sdsConnection){
@@ -133,7 +244,7 @@ public:
     };
 
     int run() final {
-        int8_t *b=this->getWriteBuffer();
+        uint8_t *b=this->getWriteBuffer();
 
         /* Try to read as much as we can save in the
            output FIFO */
@@ -143,7 +254,7 @@ public:
     };
 
 protected:
-    int8_t * getWriteBuffer(int nb=outputSize){return mDst.getWriteBuffer(nb);};
+    uint8_t * getWriteBuffer(int nb=outputSize){return mDst.getWriteBuffer(nb);};
 
     bool willOverflow(int nb = outputSize){return mDst.willOverflowWith(nb);};
 
@@ -152,5 +263,5 @@ protected:
     sds_sensor_cg_connection_t *mSDS;
     uint32_t mToRead;
 private:
-    FIFOBase<int8_t> &mDst;
+    FIFOBase<uint8_t> &mDst;
 };

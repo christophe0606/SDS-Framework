@@ -1,10 +1,11 @@
 #ifndef _REC_CONFIG_H_
     #define _REC_CONFIG_H_
     
-    #define RECORDER_USED
+    
+    
+    #define SENSOR_MODE 4
 
     
-    #define TEMPSENSOR
-
+    
     #endif
     

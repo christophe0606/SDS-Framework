@@ -1,0 +1,9 @@
+sds:
+  name: Fake samples
+  description: Fake samples
+  frequency: 30
+  content:
+  - value: x
+    type: float
+    scale: 1
+    unit: G

@@ -1,6 +1,9 @@
 from cmsis_stream.cg.scheduler import *
 import yaml
 
+class TimestampPeriodNotDivisorOfSamplePeriod(Exception):
+    pass
+
 # Open SDS data file in read mode
 def openFile(file_name):
     try:
@@ -62,7 +65,7 @@ def getSensorSampleSize(file_name):
         dt.append(entryDataType)
         sampleSize += getDataTypeSizeInBytes(entryDataType)
     
-    sensorType=CType(SINT8)
+    sensorType=CType(UINT8)
 
     return(sampleSize)
 
@@ -70,11 +73,17 @@ class SDSSensor(GenericSource):
     def __init__(self,name,nb_samples,
         sds_yml_file=None,
         sds_connection=None,
-        asynchronous=False):
+        asynchronous=False,
+        timed=None):
         GenericSource.__init__(self,name)
+        self._timed=timed
         self.sample_size = getSensorSampleSize(sds_yml_file)
-        self.addOutput("o",CType(SINT8),self.sample_size*nb_samples)
-        
+        self.addOutput("o",CType(UINT8),self.sample_size*nb_samples)
+        if timed:
+            if (nb_samples % timed) != 0:
+                raise TimestampPeriodNotDivisorOfSamplePeriod
+            self.addOutput("t",CType(UINT32),timed)
+
         self.addVariableArg(sds_connection)
         self._asynchronous = asynchronous
 
@@ -83,18 +92,30 @@ class SDSSensor(GenericSource):
         if self._asynchronous:
            return ("SDSAsyncSensor")
         else:
-           return ("SDSSensor")
+           if self._timed:
+              return ("SDSTimedSensor")
+           else:
+              return ("SDSSensor")
 
 class SDSRecorder(GenericSink):
     def __init__(self,name,nb_samples,
                  sds_yml_file=None,
-                 sds_connection=None):
+                 sds_connection=None,
+                 timed=None):
         GenericSink.__init__(self,name)
         self.sample_size = getSensorSampleSize(sds_yml_file)
-        self.addInput("i",CType(SINT8),self.sample_size*nb_samples)
-            
+        self.addInput("i",CType(UINT8),self.sample_size*nb_samples)
+        self._timed = timed
+        if timed:
+           if (nb_samples % timed) != 0:
+                raise TimestampPeriodNotDivisorOfSamplePeriod
+           self.addInput("t",CType(UINT32),timed)
+
         self.addVariableArg(sds_connection)
 
     @property
     def typeName(self):
-        return ("SDSRecorder")
+        if self._timed:
+            return ("SDSTimedRecorder")
+        else:
+            return ("SDSRecorder")

@@ -27,11 +27,11 @@
 #include "sensor_drv.h"
 #include "sensor_config.h"
 
+
 #include "globalCGSettings.h"
 #include "demo_scheduler.h"
 #include "cg_status.h"
 
-#include "demo_config.h"
 
 #ifdef ASYNCHRONOUS
 // Configuration for asynchronous mode
@@ -68,8 +68,16 @@ static sdsId_t sdsId_accelerometer                    = NULL;
 static sdsId_t sdsId_gyroscope                        = NULL;
 static sdsId_t sdsId_temperatureSensor                = NULL;
 
+#ifdef TIMED
+static sdsId_t sdsId_accelerometer_timestamps = NULL;
+#endif
+
 // SDS CG Connection
+#ifdef TIMED
+static sds_timed_sensor_cg_connection_t sensorConn_accelerometer;
+#else 
 static sds_sensor_cg_connection_t sensorConn_accelerometer;
+#endif
 static sds_sensor_cg_connection_t sensorConn_gyroscope;
 static sds_sensor_cg_connection_t sensorConn_temperatureSensor;
 
@@ -77,6 +85,10 @@ static sds_sensor_cg_connection_t sensorConn_temperatureSensor;
 static uint8_t sdsBuf_accelerometer[SDS_BUF_SIZE_ACCELEROMETER];
 static uint8_t sdsBuf_gyroscope[SDS_BUF_SIZE_ACCELEROMETER];
 static uint8_t sdsBuf_temperatureSensor[SDS_BUF_SIZE_TEMPERATURE_SENSOR];
+
+#ifdef TIMED
+static uint8_t sdsBuf_accelerometer_timestamps[SDS_BUF_SIZE_ACCELEROMETER_TIMESTAMPS];
+#endif 
 
 // Recorder identifiers
 static sdsRecId_t recId_accelerometer                 = NULL;
@@ -148,11 +160,31 @@ static __NO_RETURN void read_sensors (void *argument) {
         num = sizeof(sensorBuf) / sensorConfig_accelerometer->sample_size;
         num = sensorReadSamples(sensorId_accelerometer, num, sensorBuf, sizeof(sensorBuf));
         if (num != 0U) {
-          buf_size = num * sensorConfig_accelerometer->sample_size;
-          num = sdsWrite(sdsId_accelerometer, sensorBuf, buf_size);
-          if (num != buf_size) {
-            printf("%s: SDS write failed\r\n", sensorConfig_accelerometer->name);
+          #ifdef TIMED
+          // Write samples with timing 
+          buf_size = sensorConfig_accelerometer->sample_size;
+          for(int i=0;i<num;i++)
+          {
+            num = sdsWrite(sdsId_accelerometer, sensorBuf + i*buf_size, buf_size);
+            if (num != buf_size) {
+               printf("%s: SDS write failed\r\n", sensorConfig_accelerometer->name);
+            }
+            else
+            {
+                timestamp = osKernelGetTickCount();
+                num = sdsWrite(sdsId_accelerometer_timestamps, &timestamp, 4);
+                if (num != 4) {
+                   printf("%s: SDS timestamp write failed\r\n", sensorConfig_accelerometer->name);
+                }
+            }
           }
+          #else
+            buf_size = num * sensorConfig_accelerometer->sample_size;
+            num = sdsWrite(sdsId_accelerometer, sensorBuf, buf_size);
+            if (num != buf_size) {
+               printf("%s: SDS write failed\r\n", sensorConfig_accelerometer->name);
+            }
+          #endif
         }
       }
 
@@ -306,7 +338,11 @@ void __NO_RETURN demo(void) {
   // Get sensor identifier
   sensorId_accelerometer     = sensorGetId("Accelerometer");
   sensorId_gyroscope         = sensorGetId("Gyroscope");
+  #ifdef FAKE_SENSOR
+  sensorId_temperatureSensor = sensorGetId("Fake");
+  #else
   sensorId_temperatureSensor = sensorGetId("Temperature");
+  #endif
 
   // Get sensor configuration
   sensorConfig_accelerometer     = sensorGetConfig(sensorId_accelerometer);
@@ -318,6 +354,12 @@ void __NO_RETURN demo(void) {
                                     sizeof(sdsBuf_accelerometer),
                                     0U, SDS_THRESHOLD_ACCELEROMETER);
                                     
+#if TIMED
+  sdsId_accelerometer_timestamps     = sdsOpen(sdsBuf_accelerometer_timestamps,
+                                    sizeof(sdsBuf_accelerometer_timestamps),
+                                    0U, SDS_BUF_SIZE_ACCELEROMETER_TIMESTAMPS);
+#endif
+
   sdsId_gyroscope         = sdsOpen(sdsBuf_gyroscope,
                                     sizeof(sdsBuf_gyroscope),
                                     0U, SDS_THRESHOLD_GYROSCOPE);
@@ -337,6 +379,9 @@ void __NO_RETURN demo(void) {
   sensorConn_accelerometer.cancel_event = EVENT_STREAM_CANCEL; 
   sensorConn_accelerometer.timeout = osWaitForever;
   sensorConn_accelerometer.sdsId = sdsId_accelerometer;
+#if TIMED
+  sensorConn_accelerometer.sdsTimestampsId = sdsId_accelerometer_timestamps;
+#endif
 
   // Init accelerometer recorder - CG connection datastructure
   recConn_accelerometer.sensorName="Accelerometer";

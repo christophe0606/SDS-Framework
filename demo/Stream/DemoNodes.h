@@ -17,7 +17,8 @@ class VectorDisplay<vectorSample_t,inputSize>:
 public GenericSink<vectorSample_t, inputSize>
 {
 public:
-    VectorDisplay(FIFOBase<vectorSample_t> &src,const char* name):
+    VectorDisplay(FIFOBase<vectorSample_t> &src,
+                  const char* name):
     GenericSink<vectorSample_t,inputSize>(src),mName(name){};
 
     int prepareForRunning() final
@@ -45,17 +46,22 @@ protected:
     const char* mName;
 };
 
-template<typename IN, int inputSize,typename OUT,int outputSize>
+template<typename IN, int inputSize,
+         typename OUT,int outputSize>
 class FormatVector;
 
-template<int inputSize,int outputSize>
-class FormatVector<int8_t,inputSize,
-                          vectorSample_t,outputSize>: 
-public GenericNode<int8_t,inputSize,vectorSample_t,outputSize>
+template<int inputSize,
+         int outputSize>
+class FormatVector<uint8_t,inputSize,
+                   vectorSample_t,outputSize>: 
+public GenericNode<uint8_t,inputSize,
+                   vectorSample_t,outputSize>
 {
 public:
-    FormatVector(FIFOBase<int8_t> &src,FIFOBase<vectorSample_t> &dst):
-    GenericNode<int8_t,inputSize,vectorSample_t,outputSize>(src,dst){
+    FormatVector(FIFOBase<uint8_t> &src,
+                 FIFOBase<vectorSample_t> &dst):
+    GenericNode<uint8_t,inputSize,
+                vectorSample_t,outputSize>(src,dst){
     };
 
     int prepareForRunning() final
@@ -70,7 +76,7 @@ public:
     };
     
     int run() final{
-        int8_t *a=this->getReadBuffer();
+        uint8_t *a=this->getReadBuffer();
         vectorSample_t *b=this->getWriteBuffer();
 
         uint32_t  buf[2];
@@ -95,19 +101,20 @@ public:
 };
 
 
-template<typename IN, int inputSize,typename OUT,int outputSize>
+template<typename IN, int inputSize,
+         typename OUT,int outputSize>
 class FormatTemperature;
 
 template<>
-class FormatTemperature<int8_t,4,
+class FormatTemperature<uint8_t,4,
                         float,1>: 
-public GenericNode<int8_t,4,
+public GenericNode<uint8_t,4,
                    float,1>
 {
 public:
-    FormatTemperature(FIFOBase<int8_t> &src,
-                 FIFOBase<float> &dst):
-    GenericNode<int8_t,4,
+    FormatTemperature(FIFOBase<uint8_t> &src,
+                      FIFOBase<float> &dst):
+    GenericNode<uint8_t,4,
                 float,1>(src,dst){
     };
 
@@ -123,7 +130,7 @@ public:
     };
     
     int run() final{
-        int8_t *a=this->getReadBuffer();
+        uint8_t *a=this->getReadBuffer();
         float *b=this->getWriteBuffer();
         uint32_t  buf[2];
         float *temp = (float *)buf;
@@ -178,12 +185,12 @@ template<typename IN1, int inputSize1,
          typename OUT1, int outputSize1,
          typename OUT2, int outputSize2,
          typename OUT3, int outputSize3>
-class App;
+class AppAll;
 
 template<typename IN1, int inputSize1,
          typename IN2, int inputSize2,
          typename IN3, int inputSize3>
-class App<IN1,inputSize1,
+class AppAll<IN1,inputSize1,
           IN2,inputSize2,
           IN3,inputSize3,
           IN1,inputSize1,
@@ -191,7 +198,7 @@ class App<IN1,inputSize1,
           IN3,inputSize3>:public NodeBase
 {
 public:
-     App(FIFOBase<IN1> &src1,
+     AppAll(FIFOBase<IN1> &src1,
          FIFOBase<IN2> &src2,
          FIFOBase<IN3> &src3,
          FIFOBase<IN1> &dst1,
@@ -311,17 +318,17 @@ template<typename IN1, int inputSize1,
          typename IN2, int inputSize2,
          typename OUT1, int outputSize1,
          typename OUT2, int outputSize2>
-class SmallApp;
+class AppVec;
 
 template<typename IN1, int inputSize1,
          typename IN2, int inputSize2>
-class SmallApp<IN1,inputSize1,
+class AppVec<IN1,inputSize1,
                IN2,inputSize2,
                IN1,inputSize1,
                IN2,inputSize2>:public NodeBase
 {
 public:
-     SmallApp(FIFOBase<IN1> &src1,
+     AppVec(FIFOBase<IN1> &src1,
               FIFOBase<IN2> &src2,
               FIFOBase<IN1> &dst1,
               FIFOBase<IN2> &dst2):
@@ -408,4 +415,135 @@ private:
     FIFOBase<IN1> &mDst1;
     FIFOBase<IN2> &mDst2;
 };
+
+template<typename IN, int inputSize,
+         typename OUT,int outputSize>
+class AppTemp;
+
+template<typename IN, int inputSize>
+class AppTemp<IN,inputSize,
+           IN,inputSize>:
+public GenericNode<IN,inputSize,
+                   IN,inputSize>
+{
+public:
+    AppTemp(FIFOBase<IN> &src,
+         FIFOBase<IN> &dst):
+    GenericNode<IN,inputSize,
+                IN,inputSize>(src,dst){
+                    canRun1 = true;
+    };
+
+    int prepareForRunning() final
+    {
+        if ((this->willUnderflow()) || (this->willOverflow()))
+        {
+            canRun1 = false;
+        }
+        else
+        {
+            canRun1=true;
+        }
+
+        return(0);
+    };
+    
+    int run() final{
+        if (canRun1)
+        {
+           IN1 *in1=this->getReadBuffer1();
+           IN1 *out1=this->getWriteBuffer1();
+
+           memcpy(out1,in1,sizeof(IN1)*inputSize1);
+        }
+
+        return(0);
+    };
+
+protected:
+    bool canRun1;
+};
+
+template<typename IN, int inputSize,
+         typename OUT,int outputSize>
+class DebugNode:public GenericNode<IN,inputSize,
+                                   OUT,outputSize>
+{
+public:
+    DebugNode(FIFOBase<IN> &src,
+                 FIFOBase<OUT> &dst):
+    GenericNode<IN,inputSize,
+                OUT,outputSize>(src,dst){
+    };
+
+    int prepareForRunning() final
+    {
+        if (this->willOverflow() ||
+            this->willUnderflow())
+        {
+           return(CG_SKIP_EXECUTION_ID_CODE); // Skip execution
+        }
+
+        return(0);
+    };
+    
+    int run() final{
+        IN *a=this->getReadBuffer();
+        OUT *b=this->getWriteBuffer();
+
+        return(0);
+    };
+
+
+};
+
+template<typename IN, int inputSize>
+class DebugSink: public GenericSink<IN, inputSize>
+{
+public:
+    DebugSink(FIFOBase<IN> &src):GenericSink<IN,inputSize>(src){};
+
+    int prepareForRunning() final
+    {
+        if (this->willUnderflow())
+        {
+           return(CG_SKIP_EXECUTION_ID_CODE); // Skip execution
+        }
+
+        return(0);
+    };
+
+    int run() final
+    {
+        IN *b=this->getReadBuffer();
+        
+        return(0);
+    };
+
+};
+
+template<typename OUT,int outputSize>
+class DebugSource: public GenericSource<OUT,outputSize>
+{
+public:
+    DebugSource(FIFOBase<OUT> &dst):GenericSource<OUT,outputSize>(dst){};
+
+    int prepareForRunning() final
+    {
+        if (this->willOverflow())
+        {
+           return(CG_SKIP_EXECUTION_ID_CODE); // Skip execution
+        }
+
+        return(0);
+    };
+
+    int run() final{
+        OUT *b=this->getWriteBuffer();
+
+        return(0);
+    };
+
+};
+
 #endif

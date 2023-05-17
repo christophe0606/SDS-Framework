@@ -1,9 +1,0 @@
-sds:
-  name: Accelerometer
-  description: Accelerometer with 1667Hz sample rate
-  frequency: 1
-  content:
-  - value: x
-    type: uint32_t
-    scale: 1
-    unit: G

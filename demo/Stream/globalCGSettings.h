@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "cmsis_os2.h"
 #include "sds.h"
-
+#include "demo_config.h"
 #include "sds_cg_types.h"
 
 
@@ -15,7 +15,11 @@ typedef struct {
 } vectorSample_t;
 
 typedef struct {
+#ifdef TIMED 
+  sds_timed_sensor_cg_connection_t *sensorConn_accelerometer;
+#else
   sds_sensor_cg_connection_t *sensorConn_accelerometer;
+#endif
   sds_recorder_cg_connection_t *recConn_accelerometer;
 
   sds_sensor_cg_connection_t *sensorConn_gyroscope;

@@ -16,6 +16,14 @@ typedef struct {
     sdsId_t sdsId;
 } sds_sensor_cg_connection_t;
 
+typedef struct {
+    uint32_t event;
+    uint32_t cancel_event;
+    uint32_t timeout;
+    sdsId_t sdsId;
+    sdsId_t sdsTimestampsId;
+} sds_timed_sensor_cg_connection_t;
+
 
 typedef struct {
     const char *sensorName;
