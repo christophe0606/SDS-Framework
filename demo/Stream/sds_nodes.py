@@ -90,7 +90,10 @@ class SDSSensor(GenericSource):
     @property
     def typeName(self):
         if self._asynchronous:
-           return ("SDSAsyncSensor")
+           if self._timed:
+              return ("SDSAsyncTimedSensor")
+           else:
+              return ("SDSAsyncSensor")
         else:
            if self._timed:
               return ("SDSTimedSensor")

@@ -422,46 +422,46 @@ class AppTemp;
 
 template<typename IN, int inputSize>
 class AppTemp<IN,inputSize,
-           IN,inputSize>:
+              IN,inputSize>:
 public GenericNode<IN,inputSize,
                    IN,inputSize>
 {
 public:
     AppTemp(FIFOBase<IN> &src,
-         FIFOBase<IN> &dst):
+            FIFOBase<IN> &dst):
     GenericNode<IN,inputSize,
                 IN,inputSize>(src,dst){
-                    canRun1 = true;
+                    canRun = true;
     };
 
     int prepareForRunning() final
     {
         if ((this->willUnderflow()) || (this->willOverflow()))
         {
-            canRun1 = false;
+            canRun = false;
         }
         else
         {
-            canRun1=true;
+            canRun=true;
         }
 
         return(0);
     };
     
     int run() final{
-        if (canRun1)
+        if (canRun)
         {
-           IN1 *in1=this->getReadBuffer1();
-           IN1 *out1=this->getWriteBuffer1();
+           IN *in=this->getReadBuffer();
+           IN *out=this->getWriteBuffer();
 
-           memcpy(out1,in1,sizeof(IN1)*inputSize1);
+           memcpy(out,in,sizeof(IN)*inputSize);
         }
 
         return(0);
     };
 
 protected:
-    bool canRun1;
+    bool canRun;
 };
 
 template<typename IN, int inputSize,

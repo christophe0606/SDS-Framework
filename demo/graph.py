@@ -73,7 +73,8 @@ def gen_graph(is_asynchronous,
     
        VEC_RECORD = 100
     else:
-       if (sensor_mode & ALL_SENSORS):
+       if ((sensor_mode & ALL_SENSORS) == ALL_SENSORS):
+          print("ALL SENSORS")
           ACC_BLOCK = 1667
           GYRO_BLOCK = 1667
           TEMP_BLOCK = 1
@@ -83,7 +84,8 @@ def gen_graph(is_asynchronous,
           if timed:
              ACC_TIMED_BLOCK = 1667
              ACC_REC_TIMED_BLOCK = 1667
-       elif (sensor_mode & VEC_SENSORS):
+       elif ((sensor_mode & VEC_SENSORS) == VEC_SENSORS):
+          print("VEC SENSORS")
           ACC_BLOCK = 100
           GYRO_BLOCK = 100
        
@@ -92,7 +94,8 @@ def gen_graph(is_asynchronous,
           if timed:
              ACC_TIMED_BLOCK = 100
              ACC_REC_TIMED_BLOCK = 10
-       elif (sensor_mode & TEMP_SENSOR):
+       elif ((sensor_mode & TEMP_SENSOR) == TEMP_SENSOR):
+          print("TEMP SENSORS")
           TEMP_BLOCK = 1
 
           if timed:
@@ -112,7 +115,7 @@ def gen_graph(is_asynchronous,
     else:
         application = AppTemp("application",TEMP_BLOCK)
 
-    if (sensor_mode & VEC_SENSORS):
+    if ((sensor_mode & VEC_SENSORS) == VEC_SENSORS):
         accelerometer = SDSSensor("accelerometerSensor",ACC_BLOCK,
                                   sds_yml_file="Recordings/Accelerometer.sds.yml",
                                   sds_connection="demoContext->sensorConn_accelerometer",
@@ -122,7 +125,7 @@ def gen_graph(is_asynchronous,
                                   sds_yml_file="Recordings/Gyroscope.sds.yml",
                                   sds_connection="demoContext->sensorConn_gyroscope",
                                   asynchronous=is_asynchronous)
-    if (sensor_mode & TEMP_SENSOR):
+    if ((sensor_mode & TEMP_SENSOR) == TEMP_SENSOR):
         if fake_sensor:
             temperature = SDSSensor("fakeSensor",TEMP_BLOCK,
                                      sds_yml_file="Fake.sds.yml",
@@ -135,7 +138,7 @@ def gen_graph(is_asynchronous,
                                      sds_connection="demoContext->sensorConn_temperatureSensor",
                                      asynchronous=is_asynchronous)
     
-    if (sensor_mode & VEC_SENSORS):
+    if ((sensor_mode & VEC_SENSORS) == VEC_SENSORS):
         accelerometerRec = SDSRecorder("accelerometerRecorder",VEC_RECORD,
                                   sds_yml_file="Recordings/Accelerometer.sds.yml",
                                   sds_connection="demoContext->recConn_accelerometer",
@@ -147,20 +150,20 @@ def gen_graph(is_asynchronous,
                                   sds_connection="demoContext->recConn_gyroscope"
                                   )
     
-    if (sensor_mode & TEMP_SENSOR):
+    if ((sensor_mode & TEMP_SENSOR) == TEMP_SENSOR):
         temperatureRec = SDSRecorder("temperatureRecorder",TEMP_BLOCK,
                                   sds_yml_file="Recordings/Temperature.sds.yml",
                                   sds_connection="demoContext->recConn_temperatureSensor"
                                   )
     
-    if (sensor_mode & VEC_SENSORS):
+    if ((sensor_mode & VEC_SENSORS) == VEC_SENSORS):
        formatAccelerometer = FormatVector("formatAcc",ACC_BLOCK)
        accDisplay = VectorDisplay("accelerometer",ACC_BLOCK)
        
        formatGyroscope = FormatVector("formatGyro",GYRO_BLOCK)
        gyroDisplay = VectorDisplay("gyroscope",GYRO_BLOCK)
     
-    if (sensor_mode & TEMP_SENSOR):
+    if ((sensor_mode & TEMP_SENSOR) == TEMP_SENSOR):
        formatTemperature = FormatTemperature("formatTemp")
        tempDisplay = TemperatureDisplay("temperature")
     
@@ -168,44 +171,55 @@ def gen_graph(is_asynchronous,
     the_graph = Graph()
     
     # Sensors and formatting
-    if (sensor_mode & VEC_SENSORS):
+    if ((sensor_mode & VEC_SENSORS) == VEC_SENSORS):
        the_graph.connect(accelerometer.o,formatAccelerometer.i)
        the_graph.connect(gyroscope.o,formatGyroscope.i)
     
-    if (sensor_mode & TEMP_SENSOR):
+    if ((sensor_mode & TEMP_SENSOR) == TEMP_SENSOR):
        the_graph.connect(temperature.o,formatTemperature.i)
     
     # Application
     # To force the graph to be connected otherwise
     # we just have 3 separated graphs for each sensor / recorder
-    if (sensor_mode & VEC_SENSORS):
+    if ((sensor_mode & VEC_SENSORS) == VEC_SENSORS):
        the_graph.connect(formatAccelerometer.o,application.accI)
        the_graph.connect(formatGyroscope.o,application.gyroI)
     
-    if (sensor_mode & TEMP_SENSOR):
+    if ((sensor_mode & TEMP_SENSOR) == TEMP_SENSOR):
        the_graph.connect(formatTemperature.o,application.tempI)
     
     # Display of sensors
-    if (sensor_mode & VEC_SENSORS):
+    if ((sensor_mode & VEC_SENSORS) == VEC_SENSORS):
        the_graph.connect(application.accO,accDisplay.i)
        the_graph.connect(application.gyroO,gyroDisplay.i)
-    if (sensor_mode & TEMP_SENSOR):
+    if ((sensor_mode & TEMP_SENSOR) == TEMP_SENSOR):
        the_graph.connect(application.tempO,tempDisplay.i)
     
     
     # Recorders
     if has_recorder:
-        if (sensor_mode & VEC_SENSORS):
+        if ((sensor_mode & VEC_SENSORS) == VEC_SENSORS):
            the_graph.connect(accelerometer.o,accelerometerRec.i)
            if timed:
               the_graph.connect(accelerometer.t,accelerometerRec.t)
    
            the_graph.connect(gyroscope.o,gyroscopeRec.i)
-        if (sensor_mode & TEMP_SENSOR):
+        if ((sensor_mode & TEMP_SENSOR) == TEMP_SENSOR):
            the_graph.connect(temperature.o,temperatureRec.i)
-    
+    else:
+        if timed:
+            if ((sensor_mode & VEC_SENSORS) == VEC_SENSORS):
+               da = DebugSink("da",CType(UINT32),ACC_REC_TIMED_BLOCK)
+               the_graph.connect(accelerometer.t,da.i)
+
     header="""#ifndef _REC_CONFIG_H_
     #define _REC_CONFIG_H_
+    
+    #define ACC_SENSOR 1 
+    #define GYRO_SENSOR 2 
+    #define TEMP_SENSOR 4
+    #define ALL_SENSORS (ACC_SENSOR|GYRO_SENSOR|TEMP_SENSOR)
+    #define VEC_SENSORS (ACC_SENSOR|GYRO_SENSOR)
     
     %s
     %s
@@ -285,20 +299,23 @@ allConfigs = [
    [ALL_SENSORS,VEC_SENSORS,TEMP_SENSOR]
 ]
 
-for asyn,record,timed,mode in itertools.product(*allConfigs):
-    print(f"async={asyn},has record={record}, timed={timed},mode={mode}")
-    if timed:
-       if not record or not (mode & VEC_SENSORS):
-          continue
-    
-    gen_graph(is_asynchronous=asyn,
-                 has_recorder=record,
-                 sensor_mode=mode,
-                 timed=timed)
+GRID = False 
+if GRID:
+    for asyn,record,timed,mode in itertools.product(*allConfigs):
+        print(f"async={asyn},has record={record}, timed={timed},mode={mode}")
+        if timed:
+           if not record or not (mode & VEC_SENSORS):
+              continue
+        
+        gen_graph(is_asynchronous=asyn,
+                     has_recorder=record,
+                     sensor_mode=mode,
+                     timed=timed)
 
-#gen_graph(is_asynchronous=False,
-#          has_recorder=False,
-#          sensor_mode=VEC_SENSORS,
-#          timed=False,
-#          fake_sensor=False)
+else:
+    gen_graph(is_asynchronous=False,
+              has_recorder=True,
+              sensor_mode=VEC_SENSORS,
+              timed=True,
+              fake_sensor=False)
 

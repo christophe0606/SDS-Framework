@@ -38,7 +38,7 @@
 #include "configs/asynchronous_with_temp.h"
 #else
 // Configuration for synchronous mode
-#ifdef TEMPSENSOR
+#if ((SENSOR_MODE & ALL_SENSORS) == ALL_SENSORS)
 #include "configs/synchronous_with_temp.h"
 #else 
 #include "configs/synchronous_with_no_temp.h"
@@ -149,7 +149,7 @@ static __NO_RETURN void cmsis_stream (void *argument) {
 
 // Read sensor thread
 static __NO_RETURN void read_sensors (void *argument) {
-  uint32_t num, buf_size;
+  uint32_t num, num2,buf_size;
   uint32_t timestamp;
   (void)   argument;
 
@@ -165,15 +165,15 @@ static __NO_RETURN void read_sensors (void *argument) {
           buf_size = sensorConfig_accelerometer->sample_size;
           for(int i=0;i<num;i++)
           {
-            num = sdsWrite(sdsId_accelerometer, sensorBuf + i*buf_size, buf_size);
-            if (num != buf_size) {
+            num2 = sdsWrite(sdsId_accelerometer, sensorBuf + i*buf_size, buf_size);
+            if (num2 != buf_size) {
                printf("%s: SDS write failed\r\n", sensorConfig_accelerometer->name);
             }
             else
             {
-                timestamp = osKernelGetTickCount();
-                num = sdsWrite(sdsId_accelerometer_timestamps, &timestamp, 4);
-                if (num != 4) {
+                //timestamp = osKernelGetTickCount();
+                num2 = sdsWrite(sdsId_accelerometer_timestamps, &timestamp, 4);
+                if (num2 != 4) {
                    printf("%s: SDS timestamp write failed\r\n", sensorConfig_accelerometer->name);
                 }
             }
@@ -288,19 +288,25 @@ static void button_event (void) {
     thrId_stream = osThreadNew(cmsis_stream, (void*)&demoContext,NULL);
 
     // Accelerometer enable
+    #if (SENSOR_MODE & ACC_SENSOR)
     sdsClear(sdsId_accelerometer);
     sensorEnable(sensorId_accelerometer);
     printf("Accelerometer enabled\r\n");
+    #endif
 
     // Gyroscope enable
+    #if (SENSOR_MODE & GYRO_SENSOR)
     sdsClear(sdsId_gyroscope);
     sensorEnable(sensorId_gyroscope);
     printf("Gyroscope enabled\r\n");
+    #endif
 
     // Temperature sensor enable
+    #if (SENSOR_MODE & TEMP_SENSOR)
     sdsClear(sdsId_temperatureSensor);
     sensorEnable(sensorId_temperatureSensor);
     printf("Temperature sensor enabled\r\n");
+    #endif
 
   } else {
     event_close_sent = 0U;
@@ -312,16 +318,22 @@ static void button_event (void) {
       osThreadFlagsSet(thrId_stream, EVENT_STREAM_CANCEL);
       thrId_stream = NULL;
       // Accelerometer disable
+      #if (SENSOR_MODE & ACC_SENSOR)
       sensorDisable(sensorId_accelerometer);
       printf("Accelerometer disabled\r\n");
+      #endif
 
       // Gyroscope disable
+      #if (SENSOR_MODE & GYRO_SENSOR)
       sensorDisable(sensorId_gyroscope);
       printf("Gyroscope disabled\r\n");
+      #endif
 
       // Temperature sensor disable
+      #if (SENSOR_MODE & TEMP_SENSOR)
       sensorDisable(sensorId_temperatureSensor);
       printf("Temperature sensor disabled\r\n");
+      #endif
     }
 
     close_flag = 0U;
@@ -423,15 +435,12 @@ void __NO_RETURN demo(void) {
   demoContext.recConn_temperatureSensor = &recConn_temperatureSensor;
 
 #ifdef RECORDER_USED
-  #ifdef RECORDER_USED
   // Initialize recorder
   int32_t err = sdsRecInit(recorder_event_callback);
   if (err != SDS_REC_OK)
   {
      printf("Error initializing recorder\r\n");
   }
-  #endif
-
 #endif
 
   // Create sensor thread

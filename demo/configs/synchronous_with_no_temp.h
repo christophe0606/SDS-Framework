@@ -1,7 +1,6 @@
 #ifndef _SYNC_TEMP_H_
 #define _SYNC_TEMP_H_
 
-
 #ifndef SDS_BUF_SIZE_ACCELEROMETER
 #define SDS_BUF_SIZE_ACCELEROMETER          8192U
 #endif

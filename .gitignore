@@ -2,3 +2,5 @@ __pycache__
 demo/out/
 demo/tmp/
 utilities/SDSIO-Server/*.sds
+*.nb
+*.bat

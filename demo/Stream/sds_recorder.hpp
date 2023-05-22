@@ -6,16 +6,12 @@
 #include "cg_status.h"
 
 template<typename IN,int inputSize>
-class SDSRecorder;
-
-template<int inputSize>
-class SDSRecorder<uint8_t,inputSize>: 
-GenericSink<uint8_t,inputSize>
+class SDSRecorder: GenericSink<IN,inputSize>
 {
 public:
-    SDSRecorder(FIFOBase<uint8_t> &src,
+    SDSRecorder(FIFOBase<IN> &src,
            sds_recorder_cg_connection_t *sdsConnection):
-    GenericSink<uint8_t,inputSize>(src)
+    GenericSink<IN,inputSize>(src)
     {
         if (sdsConnection)
         {
@@ -49,7 +45,7 @@ public:
     };
 
     int run() final{
-        uint8_t *b=this->getReadBuffer();
+        IN *b=this->getReadBuffer();
         if (mRecId == NULL)
         {
             return(CG_INIT_FAILURE);
@@ -58,8 +54,8 @@ public:
         uint32_t timestamp;
         timestamp = osKernelGetTickCount();
 
-        uint32_t num = sdsRecWrite(mRecId, timestamp, b, inputSize);
-        if (num != inputSize) {
+        uint32_t num = sdsRecWrite(mRecId, timestamp, b, inputSize*sizeof(IN));
+        if (num != inputSize*sizeof(IN)) {
             return(CG_BUFFER_OVERFLOW);
         }
         return(CG_SUCCESS);
@@ -73,12 +69,12 @@ template<typename IN1,int inputSize1,
          typename IN2,int inputSize2>
 class SDSTimedRecorder;
 
-template<int inputSize1,int inputSize2>
-class SDSTimedRecorder<uint8_t,inputSize1,
+template<typename IN,int inputSize1,int inputSize2>
+class SDSTimedRecorder<IN,inputSize1,
                        uint32_t,inputSize2>:public NodeBase
 {
 public:
-    SDSTimedRecorder(FIFOBase<uint8_t> &src1,
+    SDSTimedRecorder(FIFOBase<IN> &src1,
                      FIFOBase<uint32_t> &src2,
            sds_recorder_cg_connection_t *sdsConnection):
     mSrc1(src1),mSrc2(src2) 
@@ -120,7 +116,7 @@ public:
     };
 
     int run() final{
-        uint8_t *b=this->getReadBuffer1();
+        IN *b=this->getReadBuffer1();
         uint32_t *timing=this->getReadBuffer2();
         if (mRecId == NULL)
         {
@@ -130,8 +126,8 @@ public:
         const int nb_blocks = inputSize1 / inputSize2;
         for(int blockNb=0;blockNb < nb_blocks;blockNb++)
         {
-            uint32_t num = sdsRecWrite(mRecId, timing[blockNb], b, inputSize2);
-            if (num != inputSize2) 
+            uint32_t num = sdsRecWrite(mRecId, timing[blockNb], (void *)b, sizeof(IN)*inputSize2);
+            if (num != sizeof(IN)*inputSize2) 
             {
                return(CG_BUFFER_OVERFLOW);
             }
@@ -145,13 +141,13 @@ public:
 protected:
     sdsRecId_t mRecId;
 
-    uint8_t * getReadBuffer1(int nb=inputSize1){return mSrc1.getReadBuffer(nb);};
+    IN * getReadBuffer1(int nb=inputSize1){return mSrc1.getReadBuffer(nb);};
     bool willUnderflow1(int nb = inputSize1){return mSrc1.willUnderflowWith(nb);};
 
     uint32_t * getReadBuffer2(int nb=inputSize2){return mSrc2.getReadBuffer(nb);};
     bool willUnderflow2(int nb = inputSize2){return mSrc2.willUnderflowWith(nb);};
 
 private:
-    FIFOBase<uint8_t> &mSrc1;
+    FIFOBase<IN> &mSrc1;
     FIFOBase<uint32_t> &mSrc2;
 };
