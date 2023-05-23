@@ -105,17 +105,17 @@ template<typename IN, int inputSize,
          typename OUT,int outputSize>
 class FormatTemperature;
 
-template<>
-class FormatTemperature<uint8_t,4,
-                        float,1>: 
-public GenericNode<uint8_t,4,
-                   float,1>
+template<int outputSize>
+class FormatTemperature<uint8_t,4*outputSize,
+                        float,outputSize>: 
+public GenericNode<uint8_t,4*outputSize,
+                   float,outputSize>
 {
 public:
     FormatTemperature(FIFOBase<uint8_t> &src,
                       FIFOBase<float> &dst):
-    GenericNode<uint8_t,4,
-                float,1>(src,dst){
+    GenericNode<uint8_t,4*outputSize,
+                float,outputSize>(src,dst){
     };
 
     int prepareForRunning() final
@@ -135,9 +135,13 @@ public:
         uint32_t  buf[2];
         float *temp = (float *)buf;
 
-        memcpy(buf,a,4);
+        for(int i=0;i<outputSize;i++)
+        {
+            memcpy(buf,&a[i<<2],4);
 
-        b[0] = temp[0];
+            b[i] = temp[0];
+        }
+        
        
         return(0);
     };
@@ -148,13 +152,13 @@ public:
 template<typename IN, int inputSize>
 class TemperatureDisplay;
 
-template<>
-class TemperatureDisplay<float,1>: 
-public GenericSink<float, 1>
+template<int inputSize>
+class TemperatureDisplay<float,inputSize>: 
+public GenericSink<float, inputSize>
 {
 public:
     TemperatureDisplay(FIFOBase<float> &src):
-    GenericSink<float,1>(src){};
+    GenericSink<float,inputSize>(src){};
 
     int prepareForRunning() final
     {
@@ -170,7 +174,7 @@ public:
     {
         float *b=this->getReadBuffer();
        
-        
+        /* Only first sample printed */
         printf("Temperature : %f\r\n",b[0]);
        
         return(0);

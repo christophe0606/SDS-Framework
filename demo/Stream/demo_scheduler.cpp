@@ -78,9 +78,9 @@ CG_AFTER_INCLUDES
 Description of the scheduling. 
 
 */
-static unsigned int schedule[4]=
+static unsigned int schedule[6]=
 { 
-3,1,0,2,
+3,1,2,4,0,5,
 };
 
 CG_BEFORE_FIFO_BUFFERS
@@ -89,21 +89,31 @@ CG_BEFORE_FIFO_BUFFERS
 FIFO buffers
 
 ************/
-#define FIFOSIZE0 4
-#define FIFOSIZE1 1
-#define FIFOSIZE2 1
+#define FIFOSIZE0 50
+#define FIFOSIZE1 50
+#define FIFOSIZE2 200
+#define FIFOSIZE3 200
+#define FIFOSIZE4 200
 
-#define BUFFERSIZE1 4
+#define BUFFERSIZE1 50
 CG_BEFORE_BUFFER
-uint8_t demo_buf1[BUFFERSIZE1]={0};
+float demo_buf1[BUFFERSIZE1]={0};
 
-#define BUFFERSIZE2 1
+#define BUFFERSIZE2 50
 CG_BEFORE_BUFFER
 float demo_buf2[BUFFERSIZE2]={0};
 
-#define BUFFERSIZE3 1
+#define BUFFERSIZE3 200
 CG_BEFORE_BUFFER
-float demo_buf3[BUFFERSIZE3]={0};
+uint8_t demo_buf3[BUFFERSIZE3]={0};
+
+#define BUFFERSIZE4 200
+CG_BEFORE_BUFFER
+uint8_t demo_buf4[BUFFERSIZE4]={0};
+
+#define BUFFERSIZE5 200
+CG_BEFORE_BUFFER
+uint8_t demo_buf5[BUFFERSIZE5]={0};
 
 
 CG_BEFORE_SCHEDULER_FUNCTION
@@ -116,18 +126,22 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
     /*
     Create FIFOs objects
     */
-    FIFO<uint8_t,FIFOSIZE0,1,0> fifo0(demo_buf1);
+    FIFO<float,FIFOSIZE0,1,0> fifo0(demo_buf1);
     FIFO<float,FIFOSIZE1,1,0> fifo1(demo_buf2);
-    FIFO<float,FIFOSIZE2,1,0> fifo2(demo_buf3);
+    FIFO<uint8_t,FIFOSIZE2,1,0> fifo2(demo_buf3);
+    FIFO<uint8_t,FIFOSIZE3,1,0> fifo3(demo_buf4);
+    FIFO<uint8_t,FIFOSIZE4,1,0> fifo4(demo_buf5);
 
     CG_BEFORE_NODE_INIT;
     /* 
     Create node objects
     */
-    AppTemp<float,1,float,1> application(fifo1,fifo2);
-    FormatTemperature<uint8_t,4,float,1> formatTemp(fifo0,fifo1);
-    TemperatureDisplay<float,1> temperature(fifo2);
-    SDSSensor<uint8_t,4> temperatureSensor(fifo0,demoContext->sensorConn_temperatureSensor);
+    AppTemp<float,50,float,50> application(fifo0,fifo1);
+    Duplicate2<uint8_t,200,uint8_t,200,uint8_t,200> dup0(fifo2,fifo3,fifo4);
+    SDSRecorder<uint8_t,200> fakeRecorder(fifo4,demoContext->recConn_temperatureSensor);
+    SDSSensor<uint8_t,200> fakeSensor(fifo2,demoContext->sensorConn_temperatureSensor);
+    FormatTemperature<uint8_t,200,float,50> formatTemp(fifo3,fifo0);
+    TemperatureDisplay<float,50> temperature(fifo1);
 
     /* Run several schedule iterations */
     CG_BEFORE_SCHEDULE;
@@ -135,7 +149,7 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
     {
         /* Run a schedule iteration */
         CG_BEFORE_ITERATION;
-        for(unsigned long id=0 ; id < 4; id++)
+        for(unsigned long id=0 ; id < 6; id++)
         {
             CG_BEFORE_NODE_EXECUTION;
 
@@ -149,19 +163,31 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
 
                 case 1:
                 {
-                   cgStaticError = formatTemp.run();
+                   cgStaticError = dup0.run();
                 }
                 break;
 
                 case 2:
                 {
-                   cgStaticError = temperature.run();
+                   cgStaticError = fakeRecorder.run();
                 }
                 break;
 
                 case 3:
                 {
-                   cgStaticError = temperatureSensor.run();
+                   cgStaticError = fakeSensor.run();
+                }
+                break;
+
+                case 4:
+                {
+                   cgStaticError = formatTemp.run();
+                }
+                break;
+
+                case 5:
+                {
+                   cgStaticError = temperature.run();
                 }
                 break;
 

@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser(description="Gen fake data",
 
 parser.add_argument("-f", dest="sampling_freq", type=float,
                             help="Sampling frequency", 
-                            default=30.0)
+                            default=1000.0)
 
 # It is the clock of the sensor
 # SDS using the clock of the AVH to generate
@@ -17,11 +17,11 @@ parser.add_argument("-f", dest="sampling_freq", type=float,
 # timestamp to reproduce the problem.
 parser.add_argument("-s", dest="sensor_sampling_freq", type=float,
                             help="Sampling frequency", 
-                            default=31.0)
+                            default=1000.0*1.001)
 
 parser.add_argument("-d", dest="duration", type=float,
                             help="Duration", 
-                            default=1.00)
+                            default=10.00)
 
 parser.add_argument("-b", dest="nb_block_samples", type=int,
                             help="Block size", 

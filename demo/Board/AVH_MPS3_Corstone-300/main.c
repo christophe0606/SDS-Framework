@@ -35,6 +35,7 @@ int main (void) {
   vioInit();                            // Initialize Virtual I/O
 
   VSI0_Initialize();                    // Initialize VSI0
+  VSI1_Initialize();                    // Initialize VSI1
   VSI3_Initialize();                    // Initialize VSI3
   VSI4_Initialize();                    // Initialize VSI4
   VSI6_Initialize();                    // Initialize VSI6

@@ -55,19 +55,19 @@ class VectorDisplay(GenericSink):
         return "VectorDisplay"
 
 class TemperatureDisplay(GenericSink):
-    def __init__(self,name):
+    def __init__(self,name,nb=1):
         GenericSink.__init__(self,name)
-        self.addInput("i",CType(F32),1)
+        self.addInput("i",CType(F32),nb)
 
     @property
     def typeName(self):
         return "TemperatureDisplay"
 
 class FormatTemperature(GenericNode):
-    def __init__(self,name):
+    def __init__(self,name,nb=1):
         GenericNode.__init__(self,name)
-        self.addInput("i",CType(UINT8),4)
-        self.addOutput("o",CType(F32),1)
+        self.addInput("i",CType(UINT8),4*nb)
+        self.addOutput("o",CType(F32),nb)
 
     @property
     def typeName(self):

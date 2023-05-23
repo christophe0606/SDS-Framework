@@ -96,11 +96,18 @@ def gen_graph(is_asynchronous,
              ACC_REC_TIMED_BLOCK = 10
        elif ((sensor_mode & TEMP_SENSOR) == TEMP_SENSOR):
           print("TEMP SENSORS")
-          TEMP_BLOCK = 1
-
-          if timed:
-             TEMP_TIMED_BLOCK = 1
-             TEMP_REC_TIMED_BLOCK = 1
+          if fake_sensor:
+            TEMP_BLOCK = 50
+  
+            if timed:
+               TEMP_TIMED_BLOCK = 50
+               TEMP_REC_TIMED_BLOCK = 50
+          else:
+            TEMP_BLOCK = 1
+  
+            if timed:
+               TEMP_TIMED_BLOCK = 1
+               TEMP_REC_TIMED_BLOCK = 1
     
          
     
@@ -151,10 +158,17 @@ def gen_graph(is_asynchronous,
                                   )
     
     if ((sensor_mode & TEMP_SENSOR) == TEMP_SENSOR):
-        temperatureRec = SDSRecorder("temperatureRecorder",TEMP_BLOCK,
-                                  sds_yml_file="Recordings/Temperature.sds.yml",
+        if fake_sensor:
+            temperatureRec = SDSRecorder("fakeRecorder",TEMP_BLOCK,
+                                  sds_yml_file="Fake.sds.yml",
                                   sds_connection="demoContext->recConn_temperatureSensor"
                                   )
+    
+        else:
+            temperatureRec = SDSRecorder("temperatureRecorder",TEMP_BLOCK,
+                                      sds_yml_file="Recordings/Temperature.sds.yml",
+                                      sds_connection="demoContext->recConn_temperatureSensor"
+                                      )
     
     if ((sensor_mode & VEC_SENSORS) == VEC_SENSORS):
        formatAccelerometer = FormatVector("formatAcc",ACC_BLOCK)
@@ -164,8 +178,13 @@ def gen_graph(is_asynchronous,
        gyroDisplay = VectorDisplay("gyroscope",GYRO_BLOCK)
     
     if ((sensor_mode & TEMP_SENSOR) == TEMP_SENSOR):
-       formatTemperature = FormatTemperature("formatTemp")
-       tempDisplay = TemperatureDisplay("temperature")
+       if fake_sensor:
+          formatTemperature = FormatTemperature("formatTemp",nb=TEMP_BLOCK)
+          tempDisplay = TemperatureDisplay("temperature",nb=TEMP_BLOCK)
+
+       else:
+          formatTemperature = FormatTemperature("formatTemp")
+          tempDisplay = TemperatureDisplay("temperature")
     
     # Create a Graph object
     the_graph = Graph()
@@ -232,10 +251,10 @@ def gen_graph(is_asynchronous,
     with open("Stream/demo_config.h","w") as f:
         r = "" 
         if has_recorder:
-            r = "#define RECORDER_USED\n"
+            r = "#define RECORDER_USED 1\n"
         a = ""
         if is_asynchronous:
-            a = "#define ASYNCHRONOUS\n"
+            a = "#define ASYNCHRONOUS 1\n"
         
         t = "#define SENSOR_MODE %s\n" % sensor_mode
         ti = ""
@@ -243,7 +262,7 @@ def gen_graph(is_asynchronous,
             ti = "#define TIMED %d\n" % timed
         fa = ""
         if fake_sensor:
-            fa = "#define FAKE_SENSOR\n"
+            fa = "#define FAKE_SENSOR 1\n"
         print(header % (r,a,t,ti,fa),file=f)
     
     ##############################
@@ -315,7 +334,7 @@ if GRID:
 else:
     gen_graph(is_asynchronous=False,
               has_recorder=True,
-              sensor_mode=VEC_SENSORS,
-              timed=True,
-              fake_sensor=False)
+              sensor_mode=TEMP_SENSOR,
+              timed=False,
+              fake_sensor=True)
 

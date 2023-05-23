@@ -33,9 +33,8 @@
 #define SENSOR1_NAME            "Fake"
 #define SENSOR1_DMA_MODE        0U
 #define SENSOR1_SAMPLE_SIZE     4U
-// 30.000 Hz
-#define SENSOR1_SAMPLE_INTERVAL 33333U
-#define SENSOR1_FIFO_SIZE       4U
+#define SENSOR1_SAMPLE_INTERVAL 1000U
+#define SENSOR1_FIFO_SIZE       1536U
 #define SENSOR1_DATA_THRESHOLD  0U
 
 // Pressure

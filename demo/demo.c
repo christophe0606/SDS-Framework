@@ -40,7 +40,9 @@
 // Configuration for synchronous mode
 #if ((SENSOR_MODE & ALL_SENSORS) == ALL_SENSORS)
 #include "configs/synchronous_with_temp.h"
-#else 
+#elif (FAKE_SENSOR && ((SENSOR_MODE & TEMP_SENSOR) == TEMP_SENSOR))
+#include "configs/synchronous_with_fake.h"
+#else
 #include "configs/synchronous_with_no_temp.h"
 #endif
 #endif
@@ -285,7 +287,6 @@ static void button_event (void) {
   if (active == 0U) {
     active = 1U;
 
-    thrId_stream = osThreadNew(cmsis_stream, (void*)&demoContext,NULL);
 
     // Accelerometer enable
     #if (SENSOR_MODE & ACC_SENSOR)
@@ -307,6 +308,9 @@ static void button_event (void) {
     sensorEnable(sensorId_temperatureSensor);
     printf("Temperature sensor enabled\r\n");
     #endif
+
+    thrId_stream = osThreadNew(cmsis_stream, (void*)&demoContext,NULL);
+
 
   } else {
     event_close_sent = 0U;
@@ -361,6 +365,7 @@ void __NO_RETURN demo(void) {
   sensorConfig_gyroscope         = sensorGetConfig(sensorId_gyroscope);
   sensorConfig_temperatureSensor = sensorGetConfig(sensorId_temperatureSensor);
 
+ 
   // Open SDS
   sdsId_accelerometer     = sdsOpen(sdsBuf_accelerometer,
                                     sizeof(sdsBuf_accelerometer),
@@ -416,11 +421,19 @@ void __NO_RETURN demo(void) {
   // Init temperature sensor - CG connection datastructure
   sensorConn_temperatureSensor.event = EVENT_DATA_TEMPERATURE_SENSOR; 
   sensorConn_temperatureSensor.cancel_event = EVENT_STREAM_CANCEL; 
+  #ifdef FAKE_SENSOR
+  sensorConn_temperatureSensor.timeout = SENSOR_POLLING_INTERVAL<<1;
+  #else
   sensorConn_temperatureSensor.timeout = osWaitForever;
+  #endif
   sensorConn_temperatureSensor.sdsId = sdsId_temperatureSensor;
 
   // Init temperature recorder - CG connection datastructure
+  #ifdef FAKE_SENSOR
+  recConn_temperatureSensor.sensorName="Fake";
+  #else
   recConn_temperatureSensor.sensorName="Temperature";
+  #endif
   recConn_temperatureSensor.recorderBuffer=recBuf_temperatureSensor;
   recConn_temperatureSensor.recorderBufferSize=REC_BUF_SIZE_TEMPERATURE_SENSOR;
   recConn_temperatureSensor.recorderThreshold=REC_IO_THRESHOLD_TEMPERATURE_SENSOR;

@@ -95,7 +95,7 @@ def closeFile(file_name):
         sys.exit(1)
 
 # Create new figure and plot content
-def plotData(all_data, data_desc, freq, title, view3D,start_time_limit,stop_time_limit):
+def plotData(all_data, data_desc, freq, title, view3D,start_time_limit,stop_time_limit,marker):
     dim = {}
     desc_n = 0
     desc_n_max = len(data_desc)
@@ -140,7 +140,10 @@ def plotData(all_data, data_desc, freq, title, view3D,start_time_limit,stop_time
         if len(t) > len(data):
             # Truncate timestamps to match the number of data points
             t = t[0:len(data)]
-        plt.plot(t, scaled_data, label=desc["value"])
+        if marker:
+           plt.plot(t, scaled_data, label=desc["value"],marker='o')
+        else:
+           plt.plot(t, scaled_data, label=desc["value"])
 
         # Store data points in a dictionary for later use when there are 3 axes described
         if view3D and (desc_n_max == 3):
@@ -160,6 +163,7 @@ def plotData(all_data, data_desc, freq, title, view3D,start_time_limit,stop_time
     plt.xlabel("seconds")
     plt.ylabel(unit)
     plt.legend()
+    plt.grid(linestyle=":")
 
     # Create a 3D view when there are 3 axes available
     if view3D and (desc_n_max == 3):
@@ -194,6 +198,10 @@ def main():
     optional.add_argument("-te", dest="stop_time_limit",type = float,
                             help="Limit plot to given stop time limit")
 
+    optional.add_argument("-m", dest="marker",action='store_true',
+                            help="Plot point on graph")
+
+
     args = parser.parse_args()
 
     # Load data from .yml file
@@ -220,10 +228,9 @@ def main():
         Record.flush()
 
         # Plot data from .sds file/files
-        plotData(data, data_desc, data_freq, data_name, args.view3D,args.start_time_limit,args.stop_time_limit)
+        plotData(data, data_desc, data_freq, data_name, args.view3D,args.start_time_limit,args.stop_time_limit,args.marker)
 
     # Show plotted figures
-    plt.grid(linestyle=":")
     plt.show()
 
 
