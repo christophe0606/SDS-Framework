@@ -37,7 +37,6 @@ build:
       - --entry=Reset_Handler
       - --diag_suppress 6314,6848
   define:
-    - RECORDER_ENABLED
     - _RTE_
   add-path:
     - ../sds/include
@@ -238,7 +237,7 @@ build:
     - group: sds
       misc:
         C:
-          - -DSERVER_IP="{172,22,16,1}"
+          - -DSERVER_IP={172,26,80,1}
       files:
         - file: ../sds/source/sds.c
           category: sourceC

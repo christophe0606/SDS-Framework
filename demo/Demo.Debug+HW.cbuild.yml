@@ -581,7 +581,7 @@ build:
     - group: sds
       misc:
         C:
-          - -DSERVER_IP="{172,22,16,1}"
+          - -DSERVER_IP={172,26,80,1}
       files:
         - file: ../sds/source/sds.c
           category: sourceC

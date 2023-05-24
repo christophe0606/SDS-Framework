@@ -463,7 +463,7 @@ void __NO_RETURN demo(void) {
   }
   else 
   {
-    printf("Recordeer initialized\r\n");
+    printf("Recorder initialized\r\n");
   }
 #endif
 

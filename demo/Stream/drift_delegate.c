@@ -19,7 +19,6 @@ void init_delegate_state(void *delegate_data)
    drift_delegate_data *d=(drift_delegate_data*)delegate_data;
    d->first_run=1;
    d->accumulated = 0;
-   d->excess_bytes = 0;
    d->removed = 0;
 } 
 /*
@@ -83,11 +82,15 @@ uint32_t simple_drift_correction (sdsId_t id,
           excess_bytes = (total - expected - d->removed);
        }
 
+       //printf("%d %d\r\n",num,excess_bytes);
+       //printf("%d %d\r\n",num>>2, excess_bytes>>2);
        if (num>=excess_bytes)
        {
             num -= excess_bytes;
-            d->first_time = osKernelGetTickCount();
-            d->accumulated = 0;
+            //d->first_time = osKernelGetTickCount();
+            //d->accumulated = 0;
+            //d->removed = 0;
+            d->removed += excess_bytes;
        }
        else
        {
