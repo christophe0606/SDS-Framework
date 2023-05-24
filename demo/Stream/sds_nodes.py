@@ -113,13 +113,13 @@ class SDSSensor(GenericSource):
               return ("SDSSensor")
 
 class SDSRecorder(GenericSink):
-    def __init__(self,name,nb_samples,
+    def __init__(self,name,the_type,nb_samples,
                  sds_yml_file=None,
                  sds_connection=None,
                  timed=None):
         GenericSink.__init__(self,name)
         self.sample_size = getSensorSampleSize(sds_yml_file)
-        self.addInput("i",CType(UINT8),self.sample_size*nb_samples)
+        self.addInput("i",the_type,self.sample_size*nb_samples)
         self._timed = timed
         if timed:
            if (nb_samples % timed) != 0:

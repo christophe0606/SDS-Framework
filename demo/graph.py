@@ -156,26 +156,26 @@ def gen_graph(is_asynchronous,
                                      asynchronous=is_asynchronous)
     
     if ((sensor_mode & VEC_SENSORS) == VEC_SENSORS):
-        accelerometerRec = SDSRecorder("accelerometerRecorder",VEC_RECORD,
+        accelerometerRec = SDSRecorder("accelerometerRecorder",CType(UINT8),VEC_RECORD,
                                   sds_yml_file="Recordings/Accelerometer.sds.yml",
                                   sds_connection="demoContext->recConn_accelerometer",
                                   timed=ACC_REC_TIMED_BLOCK
                                   )
         
-        gyroscopeRec = SDSRecorder("gyroscopeRecorder",VEC_RECORD,
+        gyroscopeRec = SDSRecorder("gyroscopeRecorder",CType(UINT8),VEC_RECORD,
                                   sds_yml_file="Recordings/Gyroscope.sds.yml",
                                   sds_connection="demoContext->recConn_gyroscope"
                                   )
     
     if ((sensor_mode & TEMP_SENSOR) == TEMP_SENSOR):
         if fake_sensor:
-            temperatureRec = SDSRecorder("fakeRecorder",TEMP_BLOCK,
+            temperatureRec = SDSRecorder("fakeRecorder",CType(UINT8),TEMP_BLOCK,
                                   sds_yml_file="Fake.sds.yml",
                                   sds_connection="demoContext->recConn_temperatureSensor"
                                   )
     
         else:
-            temperatureRec = SDSRecorder("temperatureRecorder",TEMP_BLOCK,
+            temperatureRec = SDSRecorder("temperatureRecorder",CType(UINT8),TEMP_BLOCK,
                                       sds_yml_file="Recordings/Temperature.sds.yml",
                                       sds_connection="demoContext->recConn_temperatureSensor"
                                       )
