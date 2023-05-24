@@ -92,10 +92,10 @@ class SDSSensor(GenericSource):
         self.addVariableArg(sds_connection)
         self._asynchronous = asynchronous
 
-        if drift_delegate and drift_delegate_data:
+        if (drift_delegate is not None) and (drift_delegate_data is not None):
            self.addVariableArg(drift_delegate)
            self.addVariableArg(drift_delegate_data)
-        else:
+        elif (drift_delegate is not None) or (drift_delegate_data is not None):
             raise DelegateFunctionAndDelegateDataNeeded
 
 

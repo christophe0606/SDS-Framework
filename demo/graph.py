@@ -86,12 +86,15 @@ def gen_graph(is_asynchronous,
           ACC_BLOCK = 1667
           GYRO_BLOCK = 1667
           TEMP_BLOCK = 1
+
        
           VEC_RECORD = 1667
 
           if timed:
              ACC_TIMED_BLOCK = 1667
              ACC_REC_TIMED_BLOCK = 1667
+             TEMP_TIMED_BLOCK = 1
+             TEMP_REC_TIMED_BLOCK = 1
        elif ((sensor_mode & VEC_SENSORS) == VEC_SENSORS):
           print("VEC SENSORS")
           ACC_BLOCK = 100
@@ -147,13 +150,15 @@ def gen_graph(is_asynchronous,
                                      sds_connection="demoContext->sensorConn_temperatureSensor",
                                      asynchronous=is_asynchronous,
                                      drift_delegate=delegate,
-                                     drift_delegate_data=delegate_data)
+                                     drift_delegate_data=delegate_data,
+                                     timed=TEMP_TIMED_BLOCK)
      
         else:
            temperature = SDSSensor("temperatureSensor",TEMP_BLOCK,
                                      sds_yml_file="Recordings/Temperature.sds.yml",
                                      sds_connection="demoContext->sensorConn_temperatureSensor",
-                                     asynchronous=is_asynchronous)
+                                     asynchronous=is_asynchronous,
+                                     timed=TEMP_TIMED_BLOCK)
     
     if ((sensor_mode & VEC_SENSORS) == VEC_SENSORS):
         accelerometerRec = SDSRecorder("accelerometerRecorder",CType(UINT8),VEC_RECORD,
@@ -171,13 +176,15 @@ def gen_graph(is_asynchronous,
         if fake_sensor:
             temperatureRec = SDSRecorder("fakeRecorder",CType(UINT8),TEMP_BLOCK,
                                   sds_yml_file="Fake.sds.yml",
-                                  sds_connection="demoContext->recConn_temperatureSensor"
+                                  sds_connection="demoContext->recConn_temperatureSensor",
+                                  timed=TEMP_REC_TIMED_BLOCK
                                   )
     
         else:
             temperatureRec = SDSRecorder("temperatureRecorder",CType(UINT8),TEMP_BLOCK,
                                       sds_yml_file="Recordings/Temperature.sds.yml",
-                                      sds_connection="demoContext->recConn_temperatureSensor"
+                                      sds_connection="demoContext->recConn_temperatureSensor",
+                                      timed=TEMP_REC_TIMED_BLOCK
                                       )
     
     if ((sensor_mode & VEC_SENSORS) == VEC_SENSORS):
@@ -235,11 +242,17 @@ def gen_graph(is_asynchronous,
            the_graph.connect(gyroscope.o,gyroscopeRec.i)
         if ((sensor_mode & TEMP_SENSOR) == TEMP_SENSOR):
            the_graph.connect(temperature.o,temperatureRec.i)
+           if timed:
+              the_graph.connect(temperature.t,temperatureRec.t)
     else:
         if timed:
             if ((sensor_mode & VEC_SENSORS) == VEC_SENSORS):
                da = DebugSink("da",CType(UINT32),ACC_REC_TIMED_BLOCK)
                the_graph.connect(accelerometer.t,da.i)
+
+            if ((sensor_mode & TEMP_SENSOR) == TEMP_SENSOR):
+               db = DebugSink("db",CType(UINT32),ACC_REC_TIMED_BLOCK)
+               the_graph.connect(temperature.t,db.i)
 
     header="""#ifndef _REC_CONFIG_H_
     #define _REC_CONFIG_H_
@@ -338,7 +351,7 @@ if GRID:
     for asyn,record,timed,mode in itertools.product(*allConfigs):
         print(f"async={asyn},has record={record}, timed={timed},mode={mode}")
         if timed:
-           if not record or not (mode & VEC_SENSORS):
+           if not record:
               continue
         
         gen_graph(is_asynchronous=asyn,
