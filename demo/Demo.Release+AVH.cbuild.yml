@@ -250,6 +250,8 @@ build:
       files:
         - file: ./Stream/demo_scheduler.cpp
           category: sourceCpp
+        - file: ./Stream/drift_delegate.c
+          category: sourceC
     - group: Board
       files:
         - file: Board/AVH_MPS3_Corstone-300/main.c

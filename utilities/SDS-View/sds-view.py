@@ -95,13 +95,14 @@ def closeFile(file_name):
         sys.exit(1)
 
 # Create new figure and plot content
-def plotData(all_data, data_desc, freq, title, view3D,start_time_limit,stop_time_limit,marker):
+def plotData(all_data, data_desc, freq, title, view3D,start_time_limit,stop_time_limit,marker,merge,nb_plot):
     dim = {}
     desc_n = 0
     desc_n_max = len(data_desc)
 
     # Create a new figure for each .sds file
-    fig = plt.figure()
+    if not merge:
+        fig = plt.figure()
     for desc in data_desc:
         # Extract parameters from description in YAML file
         if "unit" in desc:
@@ -141,9 +142,9 @@ def plotData(all_data, data_desc, freq, title, view3D,start_time_limit,stop_time
             # Truncate timestamps to match the number of data points
             t = t[0:len(data)]
         if marker:
-           plt.plot(t, scaled_data, label=desc["value"],marker='o')
+           plt.plot(t, scaled_data, label=desc["value"] + f":{nb_plot}",marker='o', markersize=3)
         else:
-           plt.plot(t, scaled_data, label=desc["value"])
+           plt.plot(t, scaled_data, label=desc["value"] + f":{nb_plot}")
 
         # Store data points in a dictionary for later use when there are 3 axes described
         if view3D and (desc_n_max == 3):
@@ -152,11 +153,11 @@ def plotData(all_data, data_desc, freq, title, view3D,start_time_limit,stop_time
         # Increment description number
         desc_n += 1
 
-    if start_time_limit or stop_time_limit:
+    if (start_time_limit is not None) or (stop_time_limit is not None):
            left,right = plt.xlim() 
-           if start_time_limit:
+           if start_time_limit is not None:
               left = start_time_limit
-           if stop_time_limit:
+           if stop_time_limit is not None:
               right = stop_time_limit
            plt.xlim(left,right)
     plt.title(title)
@@ -201,6 +202,9 @@ def main():
     optional.add_argument("-m", dest="marker",action='store_true',
                             help="Plot point on graph")
 
+    optional.add_argument("-merge", dest="merge",action='store_true',
+                            help="Merge plots")
+
 
     args = parser.parse_args()
 
@@ -221,6 +225,7 @@ def main():
     Record = RecordManager()
 
     # Read .sds file/files
+    nb = 0
     for arg in args.sds:
         file = openFile(arg)
         data = Record.getData(file)
@@ -228,7 +233,8 @@ def main():
         Record.flush()
 
         # Plot data from .sds file/files
-        plotData(data, data_desc, data_freq, data_name, args.view3D,args.start_time_limit,args.stop_time_limit,args.marker)
+        plotData(data, data_desc, data_freq, data_name, args.view3D,args.start_time_limit,args.stop_time_limit,args.marker,args.merge,nb)
+        nb = nb + 1 
 
     # Show plotted figures
     plt.show()

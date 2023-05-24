@@ -55,7 +55,15 @@ def gen_graph(is_asynchronous,
               has_recorder,
               sensor_mode=ALL_SENSORS,
               timed=False,
-              fake_sensor = False):
+              fake_sensor = False,
+              drift_delegate=False):
+
+    if drift_delegate and fake_sensor:
+        delegate="simple_drift_correction"
+        delegate_data="drift_data";
+    else:
+        delegate=None
+        delegate_data=None
     ACC_TIMED_BLOCK = None 
     ACC_REC_TIMED_BLOCK = None
 
@@ -137,7 +145,9 @@ def gen_graph(is_asynchronous,
             temperature = SDSSensor("fakeSensor",TEMP_BLOCK,
                                      sds_yml_file="Fake.sds.yml",
                                      sds_connection="demoContext->sensorConn_temperatureSensor",
-                                     asynchronous=is_asynchronous)
+                                     asynchronous=is_asynchronous,
+                                     drift_delegate=delegate,
+                                     drift_delegate_data=delegate_data)
      
         else:
            temperature = SDSSensor("temperatureSensor",TEMP_BLOCK,
@@ -245,6 +255,7 @@ def gen_graph(is_asynchronous,
     %s
     %s
     %s
+    %s
     #endif
     """
     
@@ -263,7 +274,10 @@ def gen_graph(is_asynchronous,
         fa = ""
         if fake_sensor:
             fa = "#define FAKE_SENSOR 1\n"
-        print(header % (r,a,t,ti,fa),file=f)
+        de="" 
+        if fake_sensor and drift_delegate:
+            de="#define DRIFT_DELEGATE 1\n"
+        print(header % (r,a,t,ti,fa,de),file=f)
     
     ##############################
     #
@@ -288,6 +302,7 @@ def gen_graph(is_asynchronous,
     conf.schedName="demo_scheduler"
     
     conf.asynchronous = is_asynchronous
+
     
     # Enable event recorder tracing in the scheduler
     #conf.eventRecorder=True
@@ -336,5 +351,6 @@ else:
               has_recorder=True,
               sensor_mode=TEMP_SENSOR,
               timed=False,
-              fake_sensor=True)
+              fake_sensor=True,
+              drift_delegate=True)
 

@@ -36,10 +36,11 @@ project:
         - file: ../sds/source/sdsio_socket.c
       misc:
         - C:
-          - -DSERVER_IP="{172,22,16,1}"
+          - -DSERVER_IP="{172,26,80,1}"
     - group: stream
       files:
         - file: ./Stream/demo_scheduler.cpp
+        - file: ./Stream/drift_delegate.c
 
   # requires-layers:
   #   - Board

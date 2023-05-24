@@ -32,6 +32,12 @@ typedef struct {
     uint32_t recorderThreshold;
 } sds_recorder_cg_connection_t;
 
+typedef uint32_t (*driftDelegate_t) (sdsId_t id, 
+                                     void *buf, 
+                                     uint32_t buf_size,
+                                     void *delegate_data);
+
+
 #ifdef   __cplusplus
 }
 #endif

@@ -19,9 +19,13 @@ GenericSource<uint8_t,outputSize>
 {
 public:
     SDSSensor(FIFOBase<uint8_t> &dst,
-           sds_sensor_cg_connection_t *sdsConnection):
+           sds_sensor_cg_connection_t *sdsConnection,
+           driftDelegate_t drift_delegate=nullptr,
+           void *delegate_data=nullptr):
     GenericSource<uint8_t,outputSize>(dst),
-    mSDS(sdsConnection){
+    mSDS(sdsConnection),
+    m_drift_delegate(drift_delegate),
+    m_delegate_data(delegate_data){
     };
 
     /* Should not be used in async mode. Instead use the
@@ -76,7 +80,16 @@ public:
                 }
             }
             
-            uint32_t num = sdsRead(mSDS->sdsId, b, remaining);
+
+            uint32_t num;
+            if (m_drift_delegate)
+            {
+               num=m_drift_delegate(mSDS->sdsId, b, remaining,m_delegate_data);
+            }
+            else
+            {
+                num = sdsRead(mSDS->sdsId, b, remaining);
+            }
             b += num;
             remaining -= num;
             
@@ -87,6 +100,8 @@ public:
 protected:
     bool p;
     sds_sensor_cg_connection_t *mSDS;
+    driftDelegate_t m_drift_delegate;
+    void *m_delegate_data;
 };
 
 template<typename OUT1,int outputSize1,

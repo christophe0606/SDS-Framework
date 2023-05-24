@@ -6,7 +6,7 @@
 #include "sds.h"
 #include "demo_config.h"
 #include "sds_cg_types.h"
-
+#include "drift_delegate.h"
 
 typedef struct {
   uint16_t x;

@@ -593,6 +593,8 @@ build:
       files:
         - file: ./Stream/demo_scheduler.cpp
           category: sourceCpp
+        - file: ./Stream/drift_delegate.c
+          category: sourceC
     - group: Board
       files:
         - file: Board/B-U585I-IOT02A/arduino.c

@@ -8,20 +8,12 @@ parser = argparse.ArgumentParser(description="Gen fake data",
 
 parser.add_argument("-f", dest="sampling_freq", type=float,
                             help="Sampling frequency", 
-                            default=1000.0)
+                            default=100.0)
 
-# It is the clock of the sensor
-# SDS using the clock of the AVH to generate
-# the recorder sample
-# we need to save the sample with a corrected
-# timestamp to reproduce the problem.
-parser.add_argument("-s", dest="sensor_sampling_freq", type=float,
-                            help="Sampling frequency", 
-                            default=1000.0*1.001)
 
 parser.add_argument("-d", dest="duration", type=float,
                             help="Duration", 
-                            default=10.00)
+                            default=50.00)
 
 parser.add_argument("-b", dest="nb_block_samples", type=int,
                             help="Block size", 
@@ -50,17 +42,15 @@ def getDataType(data_type):
 def signal(t):
     return(np.sin(np.pi*2.0*t))
 
-freq_correction_factor = args.sampling_freq / args.sensor_sampling_freq
-
 NB_SAMPLES = int(args.duration * args.sampling_freq)
-l=list(np.linspace(0,args.duration/freq_correction_factor,NB_SAMPLES,dtype=float))
+l=list(np.linspace(0,args.duration,NB_SAMPLES,dtype=float))
 
 s = np.array_split(l, np.arange(args.nb_block_samples, len(l), args.nb_block_samples))
 
 d_type = getDataType("float")
 
-DELTA_TIME = np.uint32(1.0*args.nb_block_samples/args.sampling_freq / 1.0e-3)
-timestamp = 0
+DELTA_TIME = 1.0*args.nb_block_samples/args.sampling_freq / 1.0e-3
+timestamp = 0.0
 with open("Fake.0.sds","wb") as of:
   for block in s:
       values = signal(block)
@@ -69,8 +59,7 @@ with open("Fake.0.sds","wb") as of:
         values = np.pad(values, [(0, delta)], mode='constant')
       if (args.nb_block_samples!=len(values)):
          raise RuntimeError
-      corrected_timestamp = int(timestamp * freq_correction_factor)
-      samples=struct.pack(f"II{int(len(values))}{d_type}", corrected_timestamp,4*args.nb_block_samples,*values)
+      samples=struct.pack(f"II{int(len(values))}{d_type}", np.uint32(np.round(timestamp)),4*args.nb_block_samples,*values)
       of.write(samples)
-      timestamp = timestamp + DELTA_TIME# 10 ms
+      timestamp = timestamp + DELTA_TIME
 

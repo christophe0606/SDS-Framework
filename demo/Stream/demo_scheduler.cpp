@@ -139,7 +139,7 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
     AppTemp<float,50,float,50> application(fifo0,fifo1);
     Duplicate2<uint8_t,200,uint8_t,200,uint8_t,200> dup0(fifo2,fifo3,fifo4);
     SDSRecorder<uint8_t,200> fakeRecorder(fifo4,demoContext->recConn_temperatureSensor);
-    SDSSensor<uint8_t,200> fakeSensor(fifo2,demoContext->sensorConn_temperatureSensor);
+    SDSSensor<uint8_t,200> fakeSensor(fifo2,demoContext->sensorConn_temperatureSensor,simple_drift_correction,drift_data);
     FormatTemperature<uint8_t,200,float,50> formatTemp(fifo3,fifo0);
     TemperatureDisplay<float,50> temperature(fifo1);
 

@@ -32,6 +32,8 @@
 #include "demo_scheduler.h"
 #include "cg_status.h"
 
+#include "drift_delegate.h"
+
 
 #ifdef ASYNCHRONOUS
 // Configuration for asynchronous mode
@@ -141,6 +143,8 @@ static __NO_RETURN void cmsis_stream (void *argument) {
   int error=CG_SUCCESS;
   uint32_t nbIterations;
   demoContext_t *context=(demoContext_t*)argument;
+
+  init_delegate_state(drift_data);
 
   nbIterations = demo_scheduler(&error,context);
   printf("Nb iteration = %d\r\n",nbIterations);
@@ -348,6 +352,8 @@ static void button_event (void) {
 void __NO_RETURN demo(void) {
   uint32_t  n, num, flags;
 
+  
+
   thrId_demo = osThreadGetId();
 
 
@@ -422,7 +428,7 @@ void __NO_RETURN demo(void) {
   sensorConn_temperatureSensor.event = EVENT_DATA_TEMPERATURE_SENSOR; 
   sensorConn_temperatureSensor.cancel_event = EVENT_STREAM_CANCEL; 
   #ifdef FAKE_SENSOR
-  sensorConn_temperatureSensor.timeout = SENSOR_POLLING_INTERVAL<<1;
+  sensorConn_temperatureSensor.timeout = osWaitForever;//SENSOR_POLLING_INTERVAL<<1;
   #else
   sensorConn_temperatureSensor.timeout = osWaitForever;
   #endif
@@ -449,10 +455,15 @@ void __NO_RETURN demo(void) {
 
 #ifdef RECORDER_USED
   // Initialize recorder
+  printf("Try initializing recorder\r\n");
   int32_t err = sdsRecInit(recorder_event_callback);
   if (err != SDS_REC_OK)
   {
      printf("Error initializing recorder\r\n");
+  }
+  else 
+  {
+    printf("Recordeer initialized\r\n");
   }
 #endif
 

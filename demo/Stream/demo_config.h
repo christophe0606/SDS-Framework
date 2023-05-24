@@ -15,5 +15,7 @@
     
     #define FAKE_SENSOR 1
 
+    #define DRIFT_DELEGATE 1
+
     #endif
     

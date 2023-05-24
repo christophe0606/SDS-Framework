@@ -1,7 +1,7 @@
 sds:
   name: Fake samples
   description: Fake samples
-  frequency: 1000
+  frequency: 100
   content:
   - value: x
     type: float

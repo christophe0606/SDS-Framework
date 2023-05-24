@@ -4,6 +4,9 @@ import yaml
 class TimestampPeriodNotDivisorOfSamplePeriod(Exception):
     pass
 
+class DelegateFunctionAndDelegateDataNeeded(Exception):
+    pass
+
 # Open SDS data file in read mode
 def openFile(file_name):
     try:
@@ -74,7 +77,9 @@ class SDSSensor(GenericSource):
         sds_yml_file=None,
         sds_connection=None,
         asynchronous=False,
-        timed=None):
+        timed=None,
+        drift_delegate=None,
+        drift_delegate_data=None):
         GenericSource.__init__(self,name)
         self._timed=timed
         self.sample_size = getSensorSampleSize(sds_yml_file)
@@ -86,6 +91,13 @@ class SDSSensor(GenericSource):
 
         self.addVariableArg(sds_connection)
         self._asynchronous = asynchronous
+
+        if drift_delegate and drift_delegate_data:
+           self.addVariableArg(drift_delegate)
+           self.addVariableArg(drift_delegate_data)
+        else:
+            raise DelegateFunctionAndDelegateDataNeeded
+
 
     @property
     def typeName(self):
