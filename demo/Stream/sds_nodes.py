@@ -76,7 +76,6 @@ class SDSSensor(GenericSource):
     def __init__(self,name,nb_samples,
         sds_yml_file=None,
         sds_connection=None,
-        asynchronous=False,
         timed=None,
         drift_delegate=None,
         drift_delegate_data=None):
@@ -90,7 +89,6 @@ class SDSSensor(GenericSource):
             self.addOutput("t",CType(UINT32),timed)
 
         self.addVariableArg(sds_connection)
-        self._asynchronous = asynchronous
 
         if (drift_delegate is not None) and (drift_delegate_data is not None):
            self.addVariableArg(drift_delegate)
@@ -101,16 +99,10 @@ class SDSSensor(GenericSource):
 
     @property
     def typeName(self):
-        if self._asynchronous:
-           if self._timed:
-              return ("SDSAsyncTimedSensor")
-           else:
-              return ("SDSAsyncSensor")
+        if self._timed:
+            return ("SDSTimedSensor")
         else:
-           if self._timed:
-              return ("SDSTimedSensor")
-           else:
-              return ("SDSSensor")
+            return ("SDSSensor")
 
 class SDSRecorder(GenericSink):
     def __init__(self,name,the_type,nb_samples,

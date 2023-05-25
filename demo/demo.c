@@ -74,6 +74,7 @@ static sdsId_t sdsId_temperatureSensor                = NULL;
 
 #ifdef TIMED
 static sdsId_t sdsId_accelerometer_timestamps = NULL;
+static sdsId_t sdsId_temperature_timestamps = NULL;
 #endif
 
 // SDS CG Connection
@@ -83,7 +84,12 @@ static sds_timed_sensor_cg_connection_t sensorConn_accelerometer;
 static sds_sensor_cg_connection_t sensorConn_accelerometer;
 #endif
 static sds_sensor_cg_connection_t sensorConn_gyroscope;
+
+#ifdef TIMED
+static sds_timed_sensor_cg_connection_t sensorConn_temperatureSensor;
+#else
 static sds_sensor_cg_connection_t sensorConn_temperatureSensor;
+#endif 
 
 // SDS buffers
 static uint8_t sdsBuf_accelerometer[SDS_BUF_SIZE_ACCELEROMETER];
@@ -92,6 +98,8 @@ static uint8_t sdsBuf_temperatureSensor[SDS_BUF_SIZE_TEMPERATURE_SENSOR];
 
 #ifdef TIMED
 static uint8_t sdsBuf_accelerometer_timestamps[SDS_BUF_SIZE_ACCELEROMETER_TIMESTAMPS];
+static uint8_t sdsBuf_temperature_timestamps[SDS_BUF_SIZE_TEMPERATURE_TIMESTAMPS];
+
 #endif 
 
 // Recorder identifiers
@@ -167,23 +175,23 @@ static __NO_RETURN void read_sensors (void *argument) {
         num = sensorReadSamples(sensorId_accelerometer, num, sensorBuf, sizeof(sensorBuf));
         if (num != 0U) {
           #ifdef TIMED
-          // Write samples with timing 
-          buf_size = sensorConfig_accelerometer->sample_size;
-          for(int i=0;i<num;i++)
-          {
-            num2 = sdsWrite(sdsId_accelerometer, sensorBuf + i*buf_size, buf_size);
-            if (num2 != buf_size) {
-               printf("%s: SDS write failed\r\n", sensorConfig_accelerometer->name);
-            }
-            else
+            // Write samples with timing 
+            buf_size = sensorConfig_accelerometer->sample_size;
+            for(int i=0;i<num;i++)
             {
-                //timestamp = osKernelGetTickCount();
-                num2 = sdsWrite(sdsId_accelerometer_timestamps, &timestamp, 4);
-                if (num2 != 4) {
-                   printf("%s: SDS timestamp write failed\r\n", sensorConfig_accelerometer->name);
-                }
+              num2 = sdsWrite(sdsId_accelerometer, sensorBuf + i*buf_size, buf_size);
+              if (num2 != buf_size) {
+                 printf("%s: SDS write failed\r\n", sensorConfig_accelerometer->name);
+              }
+              else
+              {
+                  //timestamp = osKernelGetTickCount();
+                  num2 = sdsWrite(sdsId_accelerometer_timestamps, &timestamp, 4);
+                  if (num2 != 4) {
+                     printf("%s: SDS timestamp write failed\r\n", sensorConfig_accelerometer->name);
+                  }
+              }
             }
-          }
           #else
             buf_size = num * sensorConfig_accelerometer->sample_size;
             num = sdsWrite(sdsId_accelerometer, sensorBuf, buf_size);
@@ -210,11 +218,31 @@ static __NO_RETURN void read_sensors (void *argument) {
         num = sizeof(sensorBuf) / sensorConfig_temperatureSensor->sample_size;
         num = sensorReadSamples(sensorId_temperatureSensor, num, sensorBuf, sizeof(sensorBuf));
         if (num != 0U) {
-          buf_size = num * sensorConfig_temperatureSensor->sample_size;
-          num = sdsWrite(sdsId_temperatureSensor, sensorBuf, buf_size);
-          if (num != buf_size) {
-            printf("%s: SDS write failed\r\n", sensorConfig_temperatureSensor->name);
-          }
+          #ifdef TIMED
+            // Write samples with timing 
+            buf_size = sensorConfig_temperatureSensor->sample_size;
+            for(int i=0;i<num;i++)
+            {
+              num2 = sdsWrite(sdsId_temperatureSensor, sensorBuf + i*buf_size, buf_size);
+              if (num2 != buf_size) {
+                 printf("%s: SDS write failed\r\n", sensorConfig_temperatureSensor->name);
+              }
+              else
+              {
+                  //timestamp = osKernelGetTickCount();
+                  num2 = sdsWrite(sdsId_temperature_timestamps, &timestamp, 4);
+                  if (num2 != 4) {
+                     printf("%s: SDS timestamp write failed\r\n", sensorConfig_temperatureSensor->name);
+                  }
+              }
+            }
+          #else
+            buf_size = num * sensorConfig_temperatureSensor->sample_size;
+            num = sdsWrite(sdsId_temperatureSensor, sensorBuf, buf_size);
+            if (num != buf_size) {
+              printf("%s: SDS write failed\r\n", sensorConfig_temperatureSensor->name);
+            }
+          #endif
         }
       }
 
@@ -392,6 +420,11 @@ void __NO_RETURN demo(void) {
                                     0U, SDS_THRESHOLD_TEMPERATURE_SENSOR);
 
 
+#if TIMED
+  sdsId_temperature_timestamps     = sdsOpen(sdsBuf_temperature_timestamps,
+                                    sizeof(sdsBuf_temperature_timestamps),
+                                    0U, SDS_BUF_SIZE_TEMPERATURE_TIMESTAMPS);
+#endif
   // Register SDS events
   sdsRegisterEvents(sdsId_accelerometer,     sds_event_callback, SDS_EVENT_DATA_HIGH, NULL);
   sdsRegisterEvents(sdsId_gyroscope,         sds_event_callback, SDS_EVENT_DATA_HIGH, NULL);
@@ -433,6 +466,10 @@ void __NO_RETURN demo(void) {
   sensorConn_temperatureSensor.timeout = osWaitForever;
   #endif
   sensorConn_temperatureSensor.sdsId = sdsId_temperatureSensor;
+
+#if TIMED
+  sensorConn_temperatureSensor.sdsTimestampsId = sdsId_temperature_timestamps;
+#endif
 
   // Init temperature recorder - CG connection datastructure
   #ifdef FAKE_SENSOR

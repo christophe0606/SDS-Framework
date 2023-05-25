@@ -20,12 +20,17 @@ typedef struct {
 #else
   sds_sensor_cg_connection_t *sensorConn_accelerometer;
 #endif
+
   sds_recorder_cg_connection_t *recConn_accelerometer;
 
   sds_sensor_cg_connection_t *sensorConn_gyroscope;
   sds_recorder_cg_connection_t *recConn_gyroscope;
 
+#ifdef TIMED 
+  sds_timed_sensor_cg_connection_t *sensorConn_temperatureSensor;
+#else
   sds_sensor_cg_connection_t *sensorConn_temperatureSensor;
+#endif
   sds_recorder_cg_connection_t *recConn_temperatureSensor;
 } demoContext_t;
 #endif

@@ -449,6 +449,11 @@ public:
             canRun=true;
         }
 
+        if ((!canRun))
+        {
+            return(CG_SKIP_EXECUTION_ID_CODE);
+        }
+
         return(0);
     };
     

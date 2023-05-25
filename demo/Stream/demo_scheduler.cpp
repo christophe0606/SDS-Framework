@@ -78,9 +78,9 @@ CG_AFTER_INCLUDES
 Description of the scheduling. 
 
 */
-static unsigned int schedule[6]=
+static unsigned int schedule[5]=
 { 
-3,1,2,4,0,5,
+2,1,3,0,4,
 };
 
 CG_BEFORE_FIFO_BUFFERS
@@ -89,31 +89,26 @@ CG_BEFORE_FIFO_BUFFERS
 FIFO buffers
 
 ************/
-#define FIFOSIZE0 50
+#define FIFOSIZE0 200
 #define FIFOSIZE1 50
-#define FIFOSIZE2 200
-#define FIFOSIZE3 200
-#define FIFOSIZE4 200
+#define FIFOSIZE2 50
+#define FIFOSIZE3 50
 
-#define BUFFERSIZE1 50
+#define BUFFERSIZE1 200
 CG_BEFORE_BUFFER
-float demo_buf1[BUFFERSIZE1]={0};
+uint8_t demo_buf1[BUFFERSIZE1]={0};
 
 #define BUFFERSIZE2 50
 CG_BEFORE_BUFFER
 float demo_buf2[BUFFERSIZE2]={0};
 
-#define BUFFERSIZE3 200
+#define BUFFERSIZE3 50
 CG_BEFORE_BUFFER
-uint8_t demo_buf3[BUFFERSIZE3]={0};
+float demo_buf3[BUFFERSIZE3]={0};
 
-#define BUFFERSIZE4 200
+#define BUFFERSIZE4 50
 CG_BEFORE_BUFFER
-uint8_t demo_buf4[BUFFERSIZE4]={0};
-
-#define BUFFERSIZE5 200
-CG_BEFORE_BUFFER
-uint8_t demo_buf5[BUFFERSIZE5]={0};
+uint32_t demo_buf4[BUFFERSIZE4]={0};
 
 
 CG_BEFORE_SCHEDULER_FUNCTION
@@ -126,22 +121,20 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
     /*
     Create FIFOs objects
     */
-    FIFO<float,FIFOSIZE0,1,0> fifo0(demo_buf1);
-    FIFO<float,FIFOSIZE1,1,0> fifo1(demo_buf2);
-    FIFO<uint8_t,FIFOSIZE2,1,0> fifo2(demo_buf3);
-    FIFO<uint8_t,FIFOSIZE3,1,0> fifo3(demo_buf4);
-    FIFO<uint8_t,FIFOSIZE4,1,0> fifo4(demo_buf5);
+    FIFO<uint8_t,FIFOSIZE0,0,1> fifo0(demo_buf1);
+    FIFO<float,FIFOSIZE1,0,1> fifo1(demo_buf2);
+    FIFO<float,FIFOSIZE2,0,1> fifo2(demo_buf3);
+    FIFO<uint32_t,FIFOSIZE3,0,1> fifo3(demo_buf4);
 
     CG_BEFORE_NODE_INIT;
     /* 
     Create node objects
     */
-    AppTemp<float,50,float,50> application(fifo0,fifo1);
-    Duplicate2<uint8_t,200,uint8_t,200,uint8_t,200> dup0(fifo2,fifo3,fifo4);
-    SDSRecorder<uint8_t,200> fakeRecorder(fifo4,demoContext->recConn_temperatureSensor);
-    SDSSensor<uint8_t,200> fakeSensor(fifo2,demoContext->sensorConn_temperatureSensor,simple_drift_correction,drift_data);
-    FormatTemperature<uint8_t,200,float,50> formatTemp(fifo3,fifo0);
-    TemperatureDisplay<float,50> temperature(fifo1);
+    AppTemp<float,50,float,50> application(fifo1,fifo2);
+    DebugSink<uint32_t,50> db(fifo3);
+    SDSTimedSensor<uint8_t,200,uint32_t,50> fakeSensor(fifo0,fifo3,demoContext->sensorConn_temperatureSensor);
+    FormatTemperature<uint8_t,200,float,50> formatTemp(fifo0,fifo1);
+    TemperatureDisplay<float,50> temperature(fifo2);
 
     /* Run several schedule iterations */
     CG_BEFORE_SCHEDULE;
@@ -149,9 +142,54 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
     {
         /* Run a schedule iteration */
         CG_BEFORE_ITERATION;
-        for(unsigned long id=0 ; id < 6; id++)
+        for(unsigned long id=0 ; id < 5; id++)
         {
             CG_BEFORE_NODE_EXECUTION;
+
+            cgStaticError = 0;
+            switch(schedule[id])
+            {
+                case 0:
+                {
+                    cgStaticError = application.prepareForRunning();
+                }
+                break;
+
+                case 1:
+                {
+                    cgStaticError = db.prepareForRunning();
+                }
+                break;
+
+                case 2:
+                {
+                    cgStaticError = fakeSensor.prepareForRunning();
+                }
+                break;
+
+                case 3:
+                {
+                    cgStaticError = formatTemp.prepareForRunning();
+                }
+                break;
+
+                case 4:
+                {
+                    cgStaticError = temperature.prepareForRunning();
+                }
+                break;
+
+                default:
+                break;
+            }
+
+            if (cgStaticError == CG_SKIP_EXECUTION_ID_CODE)
+            { 
+              cgStaticError = 0;
+              continue;
+            }
+
+            CHECKERROR;
 
             switch(schedule[id])
             {
@@ -163,29 +201,23 @@ uint32_t demo_scheduler(int *error,demoContext_t *demoContext)
 
                 case 1:
                 {
-                   cgStaticError = dup0.run();
+                   cgStaticError = db.run();
                 }
                 break;
 
                 case 2:
                 {
-                   cgStaticError = fakeRecorder.run();
+                   cgStaticError = fakeSensor.run();
                 }
                 break;
 
                 case 3:
                 {
-                   cgStaticError = fakeSensor.run();
-                }
-                break;
-
-                case 4:
-                {
                    cgStaticError = formatTemp.run();
                 }
                 break;
 
-                case 5:
+                case 4:
                 {
                    cgStaticError = temperature.run();
                 }

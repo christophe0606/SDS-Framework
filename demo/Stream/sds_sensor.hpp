@@ -14,36 +14,76 @@ template<typename OUT,int outputSize>
 class SDSSensor;
 
 template<int outputSize>
-class SDSSensor<uint8_t,outputSize>: 
-GenericSource<uint8_t,outputSize>
+class SDSSensor<uint8_t,outputSize>:public NodeBase
 {
 public:
     SDSSensor(FIFOBase<uint8_t> &dst,
            sds_sensor_cg_connection_t *sdsConnection,
            driftDelegate_t drift_delegate=nullptr,
            void *delegate_data=nullptr):
-    GenericSource<uint8_t,outputSize>(dst),
     mSDS(sdsConnection),
     m_drift_delegate(drift_delegate),
-    m_delegate_data(delegate_data){
+    m_delegate_data(delegate_data),
+    mDst(dst){
+        /* What to read in synchronous mode */
+        mToRead = outputSize;
     };
 
-    /* Should not be used in async mode. Instead use the
-       SDSAsyncSensor */
+    /* This function is only used in asynchronous mode */
     int prepareForRunning() final
     {
-        if (this->willOverflow())
+        /* What is the maximum amount of samples that can
+           be read during the next run */
+        mToRead = outputSize - this->nbSamplesInWriteBuffer();
+        /* If overflow of output FIFO, execution is skipped */
+        if (mToRead <= 0)
         {
-           return(CG_BUFFER_OVERFLOW); // Skip execution
+           return(CG_SKIP_EXECUTION_ID_CODE); // Skip execution
         }
+
+        /*
+           If no data in input SDS stream, we check for
+           a cancel event and then skip the execution
+        */
+        if (sdsGetCount(mSDS->sdsId)==0)
+        {
+            uint32_t flags = osThreadFlagsWait(mSDS->cancel_event, osFlagsWaitAny,0);
+            if ((flags & osFlagsError) == 0U)
+            {
+                if (flags & mSDS->cancel_event)
+                {
+                   return(CG_STOP_SCHEDULER);
+                }
+            }
+            else 
+            {
+                // osFlagsErrorResource means no cancel event
+                // has been received
+                if ((flags & osFlagsErrorResource) == 0U)
+                {
+                    return(CG_OS_ERROR);
+                }
+            }
+            return(CG_SKIP_EXECUTION_ID_CODE);
+        }
+
+        /*
+           Compute maximum amount of data that need
+           to be generated in the output
+           (based upon what's available in input and
+           free in output)
+        */
+        uint32_t inSDS = sdsGetCount(mSDS->sdsId) ;
+        mToRead = mToRead > inSDS ? inSDS : mToRead ;
 
         return(CG_SUCCESS);
     };
 
     int run() final{
-        uint8_t *b=this->getWriteBuffer();
+        uint8_t *b=this->getWriteBuffer(mToRead);
 
-        uint32_t remaining = outputSize;
+        /* What need to be generated on output */
+        uint32_t remaining = mToRead;
 
         while(remaining>0)
         {
@@ -98,10 +138,19 @@ public:
     };
 
 protected:
+    uint8_t * getWriteBuffer(int nb=outputSize){return mDst.getWriteBuffer(nb);};
+
+    bool willOverflow(int nb = outputSize){return mDst.willOverflowWith(nb);};
+
+    int nbSamplesInWriteBuffer(){return mDst.nbSamplesInFIFO();};
+    
     bool p;
     sds_sensor_cg_connection_t *mSDS;
     driftDelegate_t m_drift_delegate;
     void *m_delegate_data;
+    uint32_t mToRead;
+private:
+    FIFOBase<uint8_t> &mDst;
 };
 
 template<typename OUT1,int outputSize1,
@@ -120,31 +169,80 @@ public:
     mDst1(dst1),
     mDst2(dst2),
     mSDS(sdsConnection){
+        /* Number of samples to write in synchronous mode */
+        mToReadData = outputSize1;
+        mToReadTimestamps = outputSize2;
+        ratio = outputSize1 / outputSize2;
     };
 
-    /* Should not be used in async mode. Instead use the
-       SDSAsyncSensor */
+    
     int prepareForRunning() final
     {
-        if (this->willOverflow1())
+        mToReadData = outputSize1 - this->nbSamplesInWriteBuffer1();
+        mToReadTimestamps = outputSize2 - this->nbSamplesInWriteBuffer2();
+
+       
+        if ((mToReadData<=0) || (mToReadTimestamps<=0))
         {
-           return(CG_BUFFER_OVERFLOW); // Skip execution
+           return(CG_SKIP_EXECUTION_ID_CODE); 
         }
 
-        if (this->willOverflow2())
+        if ((sdsGetCount(mSDS->sdsId)==0) ||
+           (sdsGetCount(mSDS->sdsTimestampsId)==0))
         {
-           return(CG_BUFFER_OVERFLOW); // Skip execution
+            uint32_t flags = osThreadFlagsWait(mSDS->cancel_event, osFlagsWaitAny,0);
+            if ((flags & osFlagsError) == 0U)
+            {
+                if (flags & mSDS->cancel_event)
+                {
+                   return(CG_STOP_SCHEDULER);
+                }
+            }
+            else 
+            {
+                // osFlagsErrorResource means no cancel event
+                // has been received
+                if ((flags & osFlagsErrorResource) == 0U)
+                {
+                    return(CG_OS_ERROR);
+                }
+            }
+            return(CG_SKIP_EXECUTION_ID_CODE);
+        }
+
+        uint32_t inDataSDS = sdsGetCount(mSDS->sdsId) ;
+        uint32_t inTimestampSDS = sdsGetCount(mSDS->sdsTimestampsId) >> 2;
+
+        mToReadData = mToReadData > inDataSDS ? inDataSDS : mToReadData;
+        mToReadTimestamps = mToReadTimestamps > inTimestampSDS ? inTimestampSDS : mToReadTimestamps;
+
+        /* Ensure the ratio between data and timestamps 
+        is consistent*/
+        uint32_t expected_nb_timestamps= mToReadData / ratio;
+        if (expected_nb_timestamps > mToReadTimestamps)
+        {
+            mToReadData = mToReadTimestamps * ratio;
+        }
+        else if (expected_nb_timestamps < mToReadTimestamps)
+        {
+            mToReadTimestamps = expected_nb_timestamps;
+        }
+       
+
+        if ((mToReadData<=0) || (mToReadTimestamps<=0))
+        {
+           return(CG_SKIP_EXECUTION_ID_CODE); 
         }
 
         return(CG_SUCCESS);
     };
 
     int run() final{
-        uint8_t *b=this->getWriteBuffer1();
-        uint32_t *t=this->getWriteBuffer2();
+        uint8_t *b=this->getWriteBuffer1(mToReadData);
+        uint32_t *t=this->getWriteBuffer2(mToReadTimestamps);
 
-        uint32_t remaining = outputSize1;
-        uint32_t remainingTimestamp = outputSize2;
+        uint32_t remaining = mToReadData;
+        uint32_t remainingTimestamp = mToReadTimestamps;
 
         while((remaining>0) && (remainingTimestamp>0))
         {
@@ -210,179 +308,15 @@ protected:
     uint32_t * getWriteBuffer2(int nb=outputSize2){return mDst2.getWriteBuffer(nb);};
     bool willOverflow2(int nb = outputSize2){return mDst2.willOverflowWith(nb);};
 
+    int nbSamplesInWriteBuffer1(){return mDst1.nbSamplesInFIFO();};
+    int nbSamplesInWriteBuffer2(){return mDst2.nbSamplesInFIFO();};
+
+    uint32_t mToReadData;
+    uint32_t mToReadTimestamps;
+    uint32_t ratio;
+
 private:
     FIFOBase<uint8_t> &mDst1;
     FIFOBase<uint32_t> &mDst2;
 };
 
-/**************************************
- * 
- * ASYNCHRONOUS NODES
- * 
- * ***********************************/
-
-template<typename OUT,int outputSize>
-class SDSAsyncSensor;
-
-template<int outputSize>
-class SDSAsyncSensor<uint8_t,outputSize>: 
-public NodeBase
-{
-public:
-    SDSAsyncSensor(FIFOBase<uint8_t> &dst,
-           sds_sensor_cg_connection_t *sdsConnection):
-    mDst(dst),
-    mSDS(sdsConnection){
-    };
-
-    int prepareForRunning() final
-    {
-        /* What is the maximum amount of samples that can
-           be read during the next run */
-        mToRead = outputSize - this->nbSamplesInWriteBuffer();
-        if (mToRead <= 0)
-        {
-           return(CG_SKIP_EXECUTION_ID_CODE); // Skip execution
-        }
-
-        if (sdsGetCount(mSDS->sdsId)==0)
-        {
-            uint32_t flags = osThreadFlagsWait(mSDS->cancel_event, osFlagsWaitAny,0);
-            if ((flags & osFlagsError) == 0U)
-            {
-                if (flags & mSDS->cancel_event)
-                {
-                   return(CG_STOP_SCHEDULER);
-                }
-            }
-            else 
-            {
-                // osFlagsErrorResource means no cancel event
-                // has been received
-                if ((flags & osFlagsErrorResource) == 0U)
-                {
-                    return(CG_OS_ERROR);
-                }
-            }
-            return(CG_SKIP_EXECUTION_ID_CODE);
-        }
-
-        uint32_t inSDS = sdsGetCount(mSDS->sdsId) ;
-        mToRead = mToRead > inSDS ? inSDS : mToRead ;
-
-        return(CG_SUCCESS);
-    };
-
-    int run() final {
-        uint8_t *b=this->getWriteBuffer(mToRead);
-
-        /* Try to read as much as we can save in the
-           output FIFO */
-        uint32_t num = sdsRead(mSDS->sdsId, b, mToRead);
-        
-        return(CG_SUCCESS);
-    };
-
-protected:
-    uint8_t * getWriteBuffer(int nb=outputSize){return mDst.getWriteBuffer(nb);};
-
-    bool willOverflow(int nb = outputSize){return mDst.willOverflowWith(nb);};
-
-    int nbSamplesInWriteBuffer(){return(mDst.nbSamplesInFIFO());};
-
-    sds_sensor_cg_connection_t *mSDS;
-    uint32_t mToRead;
-private:
-    FIFOBase<uint8_t> &mDst;
-};
-
-template<typename OUT1,int outputSize1,
-         typename OUT2,int outputSize2>
-class SDSAsyncTimedSensor;
-
-template<int outputSize1, int outputSize2>
-class SDSAsyncTimedSensor<uint8_t,outputSize1,
-                         uint32_t,outputSize2>: 
-public NodeBase
-{
-public:
-    SDSAsyncTimedSensor(FIFOBase<uint8_t> &dst1,
-                        FIFOBase<uint32_t> &dst2,
-                        sds_timed_sensor_cg_connection_t *sdsConnection):
-    mDst1(dst1),
-    mDst2(dst2),
-    mSDS(sdsConnection){
-    };
-
-    int prepareForRunning() final
-    {
-        /* What is the maximum amount of samples that can
-           be read during the next run */
-        mToRead1 = outputSize1 - this->nbSamplesInWriteBuffer1();
-        mToRead2 = outputSize2 - this->nbSamplesInWriteBuffer2();
-
-        if ((mToRead1 <= 0) && (mToRead2 <= 0))
-        {
-           return(CG_SKIP_EXECUTION_ID_CODE); // Skip execution
-        }
-
-        if ((sdsGetCount(mSDS->sdsId)==0) && 
-            (sdsGetCount(mSDS->sdsTimestampsId)==0))
-        {
-            uint32_t flags = osThreadFlagsWait(mSDS->cancel_event, osFlagsWaitAny,0);
-            if ((flags & osFlagsError) == 0U)
-            {
-                if (flags & mSDS->cancel_event)
-                {
-                   return(CG_STOP_SCHEDULER);
-                }
-            }
-            else 
-            {
-                // osFlagsErrorResource means no cancel event
-                // has been received
-                if ((flags & osFlagsErrorResource) == 0U)
-                {
-                    return(CG_OS_ERROR);
-                }
-            }
-            return(CG_SKIP_EXECUTION_ID_CODE);
-        }
-
-        uint32_t inDataSDS = sdsGetCount(mSDS->sdsId) ;
-        uint32_t inTimingSDS = sdsGetCount(mSDS->sdsTimestampsId) ;
-
-        mToRead1 = mToRead1 > inDataSDS ? inDataSDS : mToRead1 ;
-        mToRead2 = mToRead2 > inTimingSDS ? inTimingSDS : mToRead2 ;
-
-        return(CG_SUCCESS);
-    };
-
-    int run() final {
-        uint8_t *b1=this->getWriteBuffer1(mToRead1);
-        uint32_t *b2=this->getWriteBuffer2(mToRead2);
-
-        /* Try to read as much as we can save in the
-           output FIFO */
-        uint32_t num = sdsRead(mSDS->sdsId, b1, mToRead1);
-        num = sdsRead(mSDS->sdsTimestampsId, b2, sizeof(uint32_t)*mToRead2);
-
-        return(CG_SUCCESS);
-    };
-
-protected:
-    uint8_t * getWriteBuffer1(int nb=outputSize1){return mDst1.getWriteBuffer(nb);};
-    bool willOverflow1(int nb = outputSize1){return mDst1.willOverflowWith(nb);};
-    int nbSamplesInWriteBuffer1(){return(mDst1.nbSamplesInFIFO());};
-
-    uint32_t * getWriteBuffer2(int nb=outputSize2){return mDst2.getWriteBuffer(nb);};
-    bool willOverflow2(int nb = outputSize2){return mDst2.willOverflowWith(nb);};
-    int nbSamplesInWriteBuffer2(){return(mDst2.nbSamplesInFIFO());};
-
-    sds_timed_sensor_cg_connection_t *mSDS;
-    uint32_t mToRead1;
-    uint32_t mToRead2;
-private:
-    FIFOBase<uint8_t> &mDst1;
-    FIFOBase<uint32_t> &mDst2;
-};

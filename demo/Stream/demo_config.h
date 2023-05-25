@@ -7,15 +7,15 @@
     #define ALL_SENSORS (ACC_SENSOR|GYRO_SENSOR|TEMP_SENSOR)
     #define VEC_SENSORS (ACC_SENSOR|GYRO_SENSOR)
     
-    #define RECORDER_USED 1
-
     
+    #define ASYNCHRONOUS 1
+
     #define SENSOR_MODE 4
 
-    
+    #define TIMED 1
+
     #define FAKE_SENSOR 1
 
-    #define DRIFT_DELEGATE 1
-
+    
     #endif
     
