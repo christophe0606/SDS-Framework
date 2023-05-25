@@ -179,18 +179,18 @@ static __NO_RETURN void read_sensors (void *argument) {
             buf_size = sensorConfig_accelerometer->sample_size;
             for(int i=0;i<num;i++)
             {
+              // Timestamp written first because 
+              // writing in the data stream can raise an event
+              num2 = sdsWrite(sdsId_accelerometer_timestamps, &timestamp, 4);
+              if (num2 != 4) {
+                     printf("%s: SDS timestamp write failed\r\n", sensorConfig_accelerometer->name);
+              }
+
               num2 = sdsWrite(sdsId_accelerometer, sensorBuf + i*buf_size, buf_size);
               if (num2 != buf_size) {
                  printf("%s: SDS write failed\r\n", sensorConfig_accelerometer->name);
               }
-              else
-              {
-                  //timestamp = osKernelGetTickCount();
-                  num2 = sdsWrite(sdsId_accelerometer_timestamps, &timestamp, 4);
-                  if (num2 != 4) {
-                     printf("%s: SDS timestamp write failed\r\n", sensorConfig_accelerometer->name);
-                  }
-              }
+              
             }
           #else
             buf_size = num * sensorConfig_accelerometer->sample_size;
@@ -223,18 +223,17 @@ static __NO_RETURN void read_sensors (void *argument) {
             buf_size = sensorConfig_temperatureSensor->sample_size;
             for(int i=0;i<num;i++)
             {
+              //timestamp = osKernelGetTickCount();
+              num2 = sdsWrite(sdsId_temperature_timestamps, &timestamp, 4);
+              if (num2 != 4) {
+                 printf("%s: SDS timestamp write failed\r\n", sensorConfig_temperatureSensor->name);
+              }
+
               num2 = sdsWrite(sdsId_temperatureSensor, sensorBuf + i*buf_size, buf_size);
               if (num2 != buf_size) {
                  printf("%s: SDS write failed\r\n", sensorConfig_temperatureSensor->name);
               }
-              else
-              {
-                  //timestamp = osKernelGetTickCount();
-                  num2 = sdsWrite(sdsId_temperature_timestamps, &timestamp, 4);
-                  if (num2 != 4) {
-                     printf("%s: SDS timestamp write failed\r\n", sensorConfig_temperatureSensor->name);
-                  }
-              }
+              
             }
           #else
             buf_size = num * sensorConfig_temperatureSensor->sample_size;

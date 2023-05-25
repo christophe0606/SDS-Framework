@@ -16,11 +16,22 @@ application [label=<
   </TR>
 </TABLE>>];
 
-db [label=<
+dup0 [shape=point,label=dup0]
+
+
+fakeRecorder [label=<
 <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
   <TR>
-    <TD ALIGN="CENTER" PORT="i">db<BR/>(DebugSink)</TD>
+    <TD PORT="i"><FONT POINT-SIZE="9.0">i</FONT></TD>
+    <TD ALIGN="CENTER" ROWSPAN="2">fakeRecorder<BR/>(SDSTimedRecorder)</TD>
+    <TD></TD>
   </TR>
+<TR>
+<TD PORT="t"><FONT POINT-SIZE="9.0">t</FONT></TD>
+
+ 
+<TD></TD></TR>
+
 </TABLE>>];
 
 
@@ -55,12 +66,6 @@ temperature [label=<
 
 
 
-fakeSensor:o -> formatTemp:i [label="u8(200)"
-,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >200</FONT>
-</TD></TR></TABLE>>
-,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >200</FONT>
-</TD></TR></TABLE>>]
-
 formatTemp:i -> application:i [label="f32(50)"
 ,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >50</FONT>
 </TD></TR></TABLE>>
@@ -73,11 +78,29 @@ application:i -> temperature:i [label="f32(50)"
 ,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >50</FONT>
 </TD></TR></TABLE>>]
 
-fakeSensor:t -> db:i [label="u32(50)"
+fakeSensor:t -> fakeRecorder:t [label="u32(50)"
 ,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >50</FONT>
 </TD></TR></TABLE>>
 ,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >50</FONT>
 </TD></TR></TABLE>>]
+
+fakeSensor:o ->  
+dup0 [label="u8(200)"
+
+,taillabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >200</FONT>
+</TD></TR></TABLE>>]
+
+ 
+dup0 -> formatTemp:i [label="u8(200)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >200</FONT>
+</TD></TR></TABLE>>
+]
+
+ 
+dup0 -> fakeRecorder:i [label="u8(200)"
+,headlabel=<<TABLE BORDER="0" CELLPADDING="2"><TR><TD><FONT COLOR="blue" POINT-SIZE="12.0" >200</FONT>
+</TD></TR></TABLE>>
+]
 
 
 }

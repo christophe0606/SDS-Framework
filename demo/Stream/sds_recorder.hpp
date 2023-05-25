@@ -90,6 +90,7 @@ public:
         {
             mRecId=NULL;
         }
+
     };
 
     ~SDSTimedRecorder()
@@ -123,17 +124,16 @@ public:
             return(CG_INIT_FAILURE);
         }
 
-        const int nb_blocks = inputSize1 / inputSize2;
-        for(int blockNb=0;blockNb < nb_blocks;blockNb++)
+        const int blockSize = inputSize1 / inputSize2;
+        for(int blockNb=0;blockNb < inputSize2;blockNb++)
         {
-            uint32_t num = sdsRecWrite(mRecId, timing[blockNb], (void *)b, sizeof(IN)*inputSize2);
-            if (num != sizeof(IN)*inputSize2) 
+            uint32_t num = sdsRecWrite(mRecId, timing[blockNb], (void *)b, sizeof(IN)*blockSize);
+            if (num != sizeof(IN)*blockSize) 
             {
                return(CG_BUFFER_OVERFLOW);
             }
-            b += inputSize2;
+            b += blockSize;
         }
-
         
         return(CG_SUCCESS);
     };

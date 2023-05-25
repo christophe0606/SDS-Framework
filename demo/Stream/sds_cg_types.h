@@ -38,6 +38,13 @@ typedef uint32_t (*driftDelegate_t) (sdsId_t id,
                                      void *delegate_data);
 
 
+
+typedef void (*timedDriftDelegate_t) (sdsId_t dataId, sdsId_t timestampId, 
+                                      void *dataBuf,void *timestampBuf, 
+                                      uint32_t dataBufSize,uint32_t timestampBufSize,
+                                      uint32_t ratio,
+                                      void *delegate_data,
+                                      uint32_t *numData,uint32_t *numTimestamps);
 #ifdef   __cplusplus
 }
 #endif

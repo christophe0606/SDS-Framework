@@ -128,7 +128,7 @@ public:
             }
             else
             {
-                num = sdsRead(mSDS->sdsId, b, remaining);
+               num = sdsRead(mSDS->sdsId, b, remaining);
             }
             b += num;
             remaining -= num;
@@ -165,7 +165,11 @@ class SDSTimedSensor<uint8_t,outputSize1,
 public:
     SDSTimedSensor(FIFOBase<uint8_t> &dst1,
                    FIFOBase<uint32_t> &dst2,
-           sds_timed_sensor_cg_connection_t *sdsConnection):
+           sds_timed_sensor_cg_connection_t *sdsConnection,
+           timedDriftDelegate_t drift_delegate=nullptr,
+           void *delegate_data=nullptr):
+    m_drift_delegate(drift_delegate),
+    m_delegate_data(delegate_data),
     mDst1(dst1),
     mDst2(dst2),
     mSDS(sdsConnection){
@@ -187,8 +191,7 @@ public:
            return(CG_SKIP_EXECUTION_ID_CODE); 
         }
 
-        if ((sdsGetCount(mSDS->sdsId)==0) ||
-           (sdsGetCount(mSDS->sdsTimestampsId)==0))
+        if (sdsGetCount(mSDS->sdsId)==0)
         {
             uint32_t flags = osThreadFlagsWait(mSDS->cancel_event, osFlagsWaitAny,0);
             if ((flags & osFlagsError) == 0U)
@@ -246,8 +249,7 @@ public:
 
         while((remaining>0) && (remainingTimestamp>0))
         {
-            if ((sdsGetCount(mSDS->sdsId)==0) && 
-               (sdsGetCount(mSDS->sdsTimestampsId)==0))
+            if (sdsGetCount(mSDS->sdsId)==0)
             {
                uint32_t flags = osThreadFlagsWait(mSDS->cancel_event | mSDS->event, osFlagsWaitAny,mSDS->timeout);
                if ((flags & osFlagsError) != 0U)
@@ -280,19 +282,31 @@ public:
                 }
             }
             
-            if (sdsGetCount(mSDS->sdsId)>0)
+            
+            uint32_t numData,numTimestamps; 
+            if (m_drift_delegate)
             {
-              uint32_t num = sdsRead(mSDS->sdsId, b, remaining);
-              b += num;
-              remaining -= num;
+               m_drift_delegate(mSDS->sdsId, 
+                                mSDS->sdsTimestampsId,
+                                b, t,
+                                remaining,remainingTimestamp,
+                                ratio,
+                                m_delegate_data,
+                                &numData,&numTimestamps);
+            }
+            else 
+            {
+               numData = sdsRead(mSDS->sdsId, b, remaining);
+               
+               numTimestamps = sdsRead(mSDS->sdsTimestampsId, t, sizeof(uint32_t)*remainingTimestamp);
+               
             }
 
-            if (sdsGetCount(mSDS->sdsTimestampsId)>0)
-            {
-              uint32_t num = sdsRead(mSDS->sdsTimestampsId, t, sizeof(uint32_t)*remainingTimestamp);
-              t += (num >> 2);
-              remainingTimestamp -= (num >>2);
-            }
+            b += numData;
+            remaining -= numData;
+
+            t += (numTimestamps >> 2);
+            remainingTimestamp -= (numTimestamps >>2);
             
         }
         return(CG_SUCCESS);
@@ -314,6 +328,9 @@ protected:
     uint32_t mToReadData;
     uint32_t mToReadTimestamps;
     uint32_t ratio;
+
+    timedDriftDelegate_t m_drift_delegate;
+    void *m_delegate_data;
 
 private:
     FIFOBase<uint8_t> &mDst1;

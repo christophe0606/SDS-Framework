@@ -59,8 +59,12 @@ def gen_graph(is_asynchronous,
               drift_delegate=False):
 
     if drift_delegate and fake_sensor:
-        delegate="simple_drift_correction"
-        delegate_data="drift_data";
+        if timed:
+           delegate="simple_timed_drift_correction"
+           delegate_data="drift_data"
+        else:
+           delegate="simple_drift_correction"
+           delegate_data="drift_data"
     else:
         delegate=None
         delegate_data=None
@@ -363,10 +367,10 @@ if GRID:
                      timed=timed)
 
 else:
-    gen_graph(is_asynchronous=True,
-              has_recorder=False,
+    gen_graph(is_asynchronous=False,
+              has_recorder=True,
               sensor_mode=TEMP_SENSOR,
               timed=True,
               fake_sensor=True,
-              drift_delegate=False)
+              drift_delegate=True)
 
